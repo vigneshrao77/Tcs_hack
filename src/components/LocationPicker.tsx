@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
+import { useLanguage } from "@/context/LanguageContext";
 
 export interface SelectedLocation {
   address: string;
@@ -53,11 +54,13 @@ export default function LocationPicker({
   initialCoordinates,
   onLocationChange,
 }: LocationPickerProps) {
+  const { t } = useLanguage();
+
   const [address, setAddress] = useState<string>(initialLocation);
   const [coords, setCoords] = useState<{ lat: number; lng: number }>(
     initialCoordinates
       ? { lat: initialCoordinates.latitude, lng: initialCoordinates.longitude }
-      : { lat: 28.6139, lng: 77.209 } // Default fallback (e.g. New Delhi or neutral center)
+      : { lat: 28.6139, lng: 77.209 } // Default fallback
   );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
@@ -103,7 +106,7 @@ export default function LocationPicker({
           });
         }
       } catch (err) {
-        console.error("OpenStreetMap Reverse Geocoding failed:", err);
+        console.error("Reverse geocoding failed:", err);
       } finally {
         setIsReverseGeocoding(false);
       }
@@ -111,45 +114,42 @@ export default function LocationPicker({
     [onLocationChange]
   );
 
-  // Initialize Map
+  // Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    const initialLat = coords.lat;
-    const initialLng = coords.lng;
-
     const map = L.map(mapContainerRef.current, {
-      center: [initialLat, initialLng],
+      center: [coords.lat, coords.lng],
       zoom: 13,
       zoomControl: true,
     });
 
-    // OpenStreetMap Standard Tiles Layer
+    // Clean OpenStreetMap Tile Layer
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
     }).addTo(map);
 
-    // Pin marker
-    const marker = L.marker([initialLat, initialLng], {
+    // Add draggable marker
+    const marker = L.marker([coords.lat, coords.lng], {
       icon: createCustomIcon(),
       draggable: true,
     }).addTo(map);
 
-    // Event: Map Click to place marker
+    // Marker dragend event
+    marker.on("dragend", () => {
+      const position = marker.getLatLng();
+      setCoords({ lat: position.lat, lng: position.lng });
+      reverseGeocode(position.lat, position.lng);
+    });
+
+    // Map click event
     map.on("click", (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       marker.setLatLng([lat, lng]);
       setCoords({ lat, lng });
       reverseGeocode(lat, lng);
-    });
-
-    // Event: Marker Drag End
-    marker.on("dragend", () => {
-      const position = marker.getLatLng();
-      setCoords({ lat: position.lat, lng: position.lng });
-      reverseGeocode(position.lat, position.lng);
     });
 
     mapRef.current = map;
@@ -163,27 +163,23 @@ export default function LocationPicker({
     };
   }, [coords.lat, coords.lng, reverseGeocode]);
 
-  // Handle Search Input with Nominatim Geocoding API
-  const handleSearchInput = (value: string) => {
-    setSearchQuery(value);
-    setShowDropdown(true);
+  // Handle Search Input with Debounce (Nominatim Search API)
+  const handleSearchInput = (query: string) => {
+    setSearchQuery(query);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (!value || value.trim().length < 3) {
+    if (query.trim().length < 3) {
       setSuggestions([]);
-      setIsSearching(false);
+      setShowDropdown(false);
       return;
     }
 
-    setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
+        setIsSearching(true);
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            value
+            query
           )}&limit=5&addressdetails=1`,
           {
             headers: {
@@ -191,40 +187,39 @@ export default function LocationPicker({
             },
           }
         );
-        const data: SearchResult[] = await res.json();
+        const data = await res.json();
         setSuggestions(data || []);
+        setShowDropdown(true);
       } catch (err) {
-        console.error("OpenStreetMap Nominatim search error:", err);
+        console.error("Nominatim search error:", err);
       } finally {
         setIsSearching(false);
       }
-    }, 450);
+    }, 400);
   };
 
   // Select Search Suggestion
   const handleSelectSuggestion = (item: SearchResult) => {
     const lat = parseFloat(item.lat);
-    const lon = parseFloat(item.lon);
-
-    setCoords({ lat, lng: lon });
+    const lng = parseFloat(item.lon);
+    setCoords({ lat, lng });
     setAddress(item.display_name);
-    setSearchQuery("");
+    setSearchQuery(item.display_name);
     setShowDropdown(false);
-    setSuggestions([]);
+
+    if (mapRef.current && markerRef.current) {
+      mapRef.current.setView([lat, lng], 16);
+      markerRef.current.setLatLng([lat, lng]);
+    }
 
     onLocationChange({
       address: item.display_name,
       latitude: lat,
-      longitude: lon,
+      longitude: lng,
     });
-
-    if (mapRef.current && markerRef.current) {
-      mapRef.current.flyTo([lat, lon], 16, { duration: 1.2 });
-      markerRef.current.setLatLng([lat, lon]);
-    }
   };
 
-  // Geolocation: Find My Location
+  // Geolocation (Current GPS Location)
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -233,35 +228,32 @@ export default function LocationPicker({
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-
-        setCoords({ lat, lng: lon });
-        setIsLocating(false);
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoords({ lat: latitude, lng: longitude });
 
         if (mapRef.current && markerRef.current) {
-          mapRef.current.flyTo([lat, lon], 16, { duration: 1 });
-          markerRef.current.setLatLng([lat, lon]);
+          mapRef.current.setView([latitude, longitude], 16);
+          markerRef.current.setLatLng([latitude, longitude]);
         }
 
-        reverseGeocode(lat, lon);
-      },
-      (err) => {
+        reverseGeocode(latitude, longitude);
         setIsLocating(false);
-        console.warn("Geolocation failed or denied:", err.message);
-        alert("Unable to retrieve your location. Please search manually.");
       },
-      { timeout: 10000 }
+      (error) => {
+        console.error("Geolocation error:", error);
+        alert("Unable to retrieve your location. Please check browser permissions.");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  // Manual address text edits
   const handleAddressTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setAddress(val);
+    const text = e.target.value;
+    setAddress(text);
     onLocationChange({
-      address: val,
+      address: text,
       latitude: coords.lat,
       longitude: coords.lng,
     });
@@ -275,13 +267,13 @@ export default function LocationPicker({
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Search address via OpenStreetMap (e.g. Connaught Place, Mumbai Airport, Wall Street)..."
+              placeholder={t("osm_search_placeholder")}
               value={searchQuery}
               onChange={(e) => handleSearchInput(e.target.value)}
               onFocus={() => {
                 if (suggestions.length > 0) setShowDropdown(true);
               }}
-              className="w-full pl-8 pr-8 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-800 text-xs sm:text-sm shadow-2xs"
+              className="w-full pl-8 pr-8 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs shadow-inner"
             />
             <span className="absolute left-2.5 top-2.5 text-slate-400">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -297,18 +289,18 @@ export default function LocationPicker({
             type="button"
             onClick={handleUseCurrentLocation}
             disabled={isLocating}
-            title="Use current GPS location"
-            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+            title={t("use_gps")}
+            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-300 text-slate-700 rounded-xl text-xs font-medium flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
           >
-            <span>{isLocating ? "Locating..." : "Use GPS"}</span>
+            <span>{isLocating ? t("locating") : t("use_gps")}</span>
           </button>
         </div>
 
         {/* Autocomplete Dropdown List */}
         {showDropdown && suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
             <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200 flex items-center justify-between">
-              <span>OpenStreetMap Suggestions</span>
+              <span>{t("osm_suggestions")}</span>
               <button
                 type="button"
                 onClick={() => setShowDropdown(false)}
@@ -332,7 +324,7 @@ export default function LocationPicker({
       </div>
 
       {/* Interactive Map Container */}
-      <div className="relative rounded-lg overflow-hidden border border-slate-300 bg-slate-100">
+      <div className="relative rounded-xl overflow-hidden border border-slate-300 bg-slate-100">
         <div
           ref={mapContainerRef}
           className="w-full h-64 sm:h-72"
@@ -340,14 +332,14 @@ export default function LocationPicker({
         />
 
         {/* Map Instructions Badge */}
-        <div className="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded border border-slate-300 text-[10px] text-slate-700 pointer-events-none shadow-2xs">
-          Click map or drag pin to position branch coordinates
+        <div className="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-300 text-[10px] text-slate-700 pointer-events-none shadow-2xs">
+          {t("map_instructions")}
         </div>
 
         {/* Reverse Geocoding Indicator */}
         {isReverseGeocoding && (
-          <div className="absolute top-2 right-2 z-20 bg-slate-900 text-white px-2.5 py-1 rounded text-[10px] font-medium shadow-md">
-            Resolving address coordinates...
+          <div className="absolute top-2 right-2 z-20 bg-slate-900 text-white px-2.5 py-1 rounded-lg text-[10px] font-medium shadow-md">
+            {t("resolving_address")}
           </div>
         )}
       </div>
@@ -355,31 +347,31 @@ export default function LocationPicker({
       {/* Selected Address Display & Manual Edit */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-          Branch Location / Address *
+          {t("branch_location_label")}
         </label>
         <div className="relative">
           <input
             type="text"
             required
-            placeholder="Selected branch address will appear here (or type manually)..."
+            placeholder={t("branch_location_placeholder")}
             value={address}
             onChange={handleAddressTextChange}
-            className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-800 text-xs sm:text-sm shadow-2xs"
+            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs shadow-inner"
           />
         </div>
       </div>
 
       {/* Coordinates & OpenStreetMap Reference Badge */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
         <div className="flex items-center gap-3 font-mono">
           <span className="text-slate-700">
-            Latitude:{" "}
+            {t("latitude")}:{" "}
             <span className="text-slate-900 font-bold">
               {coords.lat.toFixed(6)}
             </span>
           </span>
           <span className="text-slate-700">
-            Longitude:{" "}
+            {t("longitude")}:{" "}
             <span className="text-slate-900 font-bold">
               {coords.lng.toFixed(6)}
             </span>
@@ -390,9 +382,9 @@ export default function LocationPicker({
           href={`https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-emerald-800 hover:underline font-medium flex items-center gap-1"
+          className="text-blue-600 hover:underline font-medium flex items-center gap-1"
         >
-          View on OpenStreetMap ↗
+          {t("view_on_osm")}
         </a>
       </div>
     </div>

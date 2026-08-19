@@ -225,7 +225,7 @@ export default function RegisterPage() {
         <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden">
           <MacWindowHeader
             title={t("register_title")}
-            subtitle="Account Enrollment Assistant"
+            subtitle={t("account_enrollment_assistant")}
           />
 
           <div className="p-6 sm:p-8 space-y-6">
@@ -299,7 +299,7 @@ export default function RegisterPage() {
                     <div className="text-xs text-slate-400">{t("loading")}</div>
                   ) : branches.length === 0 ? (
                     <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                      <span>No bank branches registered in the system.</span>
+                      <span>{t("no_branches_warning")}</span>
                     </div>
                   ) : (
                     <select
@@ -420,7 +420,7 @@ export default function RegisterPage() {
                       <label className="block text-[11px] font-semibold text-slate-700">
                         {t("enter_otp_label")}
                       </label>
-                      <span className="text-[10px] text-slate-400">Validity: 5 {t("mins")}</span>
+                      <span className="text-[10px] text-slate-400">{t("validity_prefix")}: 5 {t("mins")}</span>
                     </div>
 
                     <div className="flex gap-2">

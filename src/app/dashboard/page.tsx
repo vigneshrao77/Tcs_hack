@@ -9,7 +9,6 @@ import {
 } from "@/types/serviceTypes";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import MacWindowHeader from "@/components/MacWindowHeader";
 import {
   BankIcon,
   CashIcon,
@@ -108,6 +107,22 @@ export default function DashboardPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // Helper for localized counter category label
+  const getCategoryDeskName = (category: string, fallback: string) => {
+    switch (category) {
+      case "cashCounters":
+        return t("desk_cash");
+      case "accountAndKyc":
+        return t("desk_acc");
+      case "loanOfficers":
+        return t("desk_loan");
+      case "customerService":
+        return t("desk_cust");
+      default:
+        return fallback;
+    }
+  };
 
   // Load User from LocalStorage
   useEffect(() => {
@@ -268,7 +283,7 @@ export default function DashboardPage() {
           <div className="space-y-3 max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-white/80 text-slate-700 border border-slate-300/80 shadow-2xs backdrop-blur-md">
               <ShieldCheckIcon size={13} className="text-emerald-700" />
-              <span>Core Banking Branch Queue Management</span>
+              <span>{t("network_setup")}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
@@ -308,13 +323,15 @@ export default function DashboardPage() {
           {/* Services Quick View */}
           <div className="w-full pt-6 border-t border-slate-200/80 space-y-3.5 text-left">
             <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-center">
-              Branch Service Categories
+              {t("branch_service_categories")}
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {SERVICE_OPTIONS.map((srv) => {
                 const meta = SERVICE_CATEGORY_MAP[srv];
                 const keys = SERVICE_KEYS[srv];
+                const deskName = getCategoryDeskName(meta.category, meta.label);
+
                 return (
                   <div
                     key={srv}
@@ -328,7 +345,7 @@ export default function DashboardPage() {
                         {t(keys.nameKey)}
                       </div>
                       <div className="text-[10px] text-slate-400 font-mono">
-                        {meta.label}
+                        {deskName}
                       </div>
                     </div>
                   </div>
@@ -339,7 +356,7 @@ export default function DashboardPage() {
         </main>
 
         <footer className="border-t border-slate-200/80 py-3 text-center text-[11px] text-slate-400 bg-white/50 backdrop-blur-md">
-          macOS Styled Core Banking Client • Operating System Operations Suite
+          {t("app_footer")}
         </footer>
       </div>
     );
@@ -415,7 +432,7 @@ export default function DashboardPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                 {t("verified_account")}
               </span>
-              <span className="text-[11px] text-slate-400 font-mono">ID: {user.id ? user.id.slice(-6).toUpperCase() : "ACTIVE"}</span>
+              <span className="text-[11px] text-slate-400 font-mono">{t("status_active")}</span>
             </div>
 
             <div>
@@ -559,7 +576,7 @@ export default function DashboardPage() {
                   {t("designated_counter")}
                 </div>
                 <div className="text-xs font-bold text-slate-900 mt-1">
-                  {activeToken.categoryLabel}
+                  {getCategoryDeskName(activeToken.assignedCategory, activeToken.categoryLabel)}
                 </div>
                 <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                   {activeToken.assignedCategory}
@@ -617,7 +634,7 @@ export default function DashboardPage() {
 
             {activeToken && (
               <div className="text-[11px] bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1 rounded-full self-start sm:self-center font-medium">
-                Active: <strong className="font-mono text-slate-900">{activeToken.tokenNumber}</strong>
+                {t("active_badge")}: <strong className="font-mono text-slate-900">{activeToken.tokenNumber}</strong>
               </div>
             )}
           </div>
@@ -628,6 +645,7 @@ export default function DashboardPage() {
               const meta = SERVICE_CATEGORY_MAP[serviceName];
               const keys = SERVICE_KEYS[serviceName];
               const isSelected = selectedService === serviceName;
+              const deskName = getCategoryDeskName(meta.category, meta.label);
 
               return (
                 <div
@@ -679,9 +697,9 @@ export default function DashboardPage() {
                       isSelected ? "border-slate-800 text-slate-400" : "border-slate-200/80 text-slate-500"
                     }`}
                   >
-                    <span>{meta.label}</span>
+                    <span>{deskName}</span>
                     <span className="font-semibold text-[10px]">
-                      {isSelected ? "✓ Selected" : "Select →"}
+                      {isSelected ? t("selected_check") : t("select_arrow")}
                     </span>
                   </div>
                 </div>
@@ -704,7 +722,7 @@ export default function DashboardPage() {
                     <p className="text-[11px] text-slate-500">
                       {t("assigned_to")}{" "}
                       <strong className="text-slate-800">
-                        {SERVICE_CATEGORY_MAP[selectedService].label}
+                        {getCategoryDeskName(SERVICE_CATEGORY_MAP[selectedService].category, SERVICE_CATEGORY_MAP[selectedService].label)}
                       </strong>
                     </p>
                   </div>

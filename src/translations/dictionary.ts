@@ -25,6 +25,10 @@ export const translations: Record<Language, Record<string, string>> = {
     gate_register_btn: "Open New Bank Account",
     gate_or: "OR",
     features_intro: "Access prompt counter service and track live queue wait times at your branch.",
+    branch_service_categories: "Branch Service Categories",
+    app_footer: "macOS Styled Core Banking Client • Operating System Operations Suite",
+    core_banking_client: "Core Banking Client",
+    account_enrollment_assistant: "Account Enrollment Assistant",
 
     // Dashboard & Profile
     welcome_back: "Welcome back",
@@ -58,6 +62,16 @@ export const translations: Record<Language, Record<string, string>> = {
     notes_placeholder: "e.g., Cash deposit of ₹50,000 or Vehicle Loan Query",
     confirm_generate_ticket: "Generate Queue Token Ticket",
     generating_token: "Issuing Token...",
+    select_arrow: "Select →",
+    selected_check: "✓ Selected",
+    active_badge: "Active",
+
+    // Counter Desks
+    desk_cash: "Cash Counter",
+    desk_acc: "Account & KYC Desk",
+    desk_loan: "Loan & Credit Desk",
+    desk_cust: "Customer Service Desk",
+    desk_cheque: "Cash & Clearing Counter",
 
     // 8 Services Names
     srv_cash: "Cash Withdrawal / Deposit",
@@ -122,8 +136,20 @@ export const translations: Record<Language, Record<string, string>> = {
     complete_reg_btn: "Complete Account Registration",
     already_have_account: "Already registered?",
     sign_in_link: "Sign in to existing account →",
+    validity_prefix: "Validity",
+    no_branches_warning: "No bank branches registered in the system.",
 
     // Admin Portal
+    security_auth: "Security Authorization",
+    restricted_ops_console: "Restricted Operations Console",
+    admin_passcode_req: "Administrative passcode required to configure bank branches and staff deployments.",
+    security_passcode: "Security Passcode *",
+    enter_passcode: "Enter Passcode",
+    show: "Show",
+    hide: "Hide",
+    authenticate_console: "Authenticate Console",
+    return_to_customer: "← Return to Customer Portal",
+    lock: "Lock",
     network_setup: "Branch Operations Management",
     register_branch_btn: "Register Branch",
     close_form_btn: "Close Form",
@@ -149,6 +175,24 @@ export const translations: Record<Language, Record<string, string>> = {
     update_branch_btn: "Update Branch Record",
     staff_breakdown: "Staff Allocation Summary",
     registered_branches_list: "Registered Bank Branches",
+    registered_branches_badge: "Registered Branches",
+    no_branches_registered: "No Registered Bank Branches",
+    no_branches_registered_desc: "Get started by registering the first branch location and counter staff allocation.",
+    location_prefix: "Location",
+    contact_prefix: "Contact",
+
+    // Location Picker
+    osm_search_placeholder: "Search address via OpenStreetMap (e.g. Connaught Place, Mumbai Airport, Wall Street)...",
+    use_gps: "Use GPS",
+    locating: "Locating...",
+    osm_suggestions: "OpenStreetMap Suggestions",
+    map_instructions: "Click map or drag pin to position branch coordinates",
+    resolving_address: "Resolving address coordinates...",
+    branch_location_label: "Branch Location / Address *",
+    branch_location_placeholder: "Selected branch address will appear here (or type manually)...",
+    latitude: "Latitude",
+    longitude: "Longitude",
+    view_on_osm: "View on OpenStreetMap ↗",
   },
   te: {
     // Navigation & Common
@@ -174,6 +218,10 @@ export const translations: Record<Language, Record<string, string>> = {
     gate_register_btn: "కొత్త బ్యాంక్ ఖాతా తెరవండి",
     gate_or: "లేదా",
     features_intro: "లైవ్ డిజిటల్ టోకెన్లతో వేచి ఉండే సమయాన్ని తగ్గించుకోండి.",
+    branch_service_categories: "బ్రాంచ్ సేవా విభాగాలు",
+    app_footer: "macOS కోర్ బ్యాంకింగ్ క్లయింట్ • ఆపరేటింగ్ సిస్టమ్ ఆపరేషన్స్ సూట్",
+    core_banking_client: "కోర్ బ్యాంకింగ్ క్లయింట్",
+    account_enrollment_assistant: "ఖాతా నమోదు సహాయకుడు",
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",
@@ -207,6 +255,16 @@ export const translations: Record<Language, Record<string, string>> = {
     notes_placeholder: "ఉదా: ₹50,000 నగదు డిపాజిట్ లేదా కార్ లోన్ వివరాలు",
     confirm_generate_ticket: "క్యూ టోకెన్ టికెట్ పొందండి",
     generating_token: "టోకెన్ జారీ అవుతోంది...",
+    select_arrow: "ఎంచుకోండి →",
+    selected_check: "✓ ఎంపిక చేయబడింది",
+    active_badge: "యాక్టివ్",
+
+    // Counter Desks
+    desk_cash: "నగదు కౌంటర్",
+    desk_acc: "ఖాతా & KYC డెస్క్",
+    desk_loan: "రుణ & క్రెడిట్ డెస్క్",
+    desk_cust: "కస్టమర్ సర్వీస్ డెస్క్",
+    desk_cheque: "నగదు & క్లియరింగ్ కౌంటర్",
 
     // 8 Services Names
     srv_cash: "నగదు ఉపసంహరణ / డిపాజిట్",
@@ -271,8 +329,20 @@ export const translations: Record<Language, Record<string, string>> = {
     complete_reg_btn: "నమోదు పూర్తి చేయండి",
     already_have_account: "ఇప్పటికే ఖాతా ఉందా?",
     sign_in_link: "ఖాతా సంఖ్యతో సైన్ ఇన్ చేయండి →",
+    validity_prefix: "చెల్లుబాటు",
+    no_branches_warning: "సిస్టమ్‌లో ఎటువంటి బ్యాంక్ బ్రాంచ్‌లు నమోదు కాలేదు.",
 
     // Admin Portal
+    security_auth: "భద్రతా ప్రమాణీకరణ",
+    restricted_ops_console: "పరిమిత ఆపరేషన్స్ కన్సోల్",
+    admin_passcode_req: "బ్యాంక్ బ్రాంచ్‌లు మరియు సిబ్బంది కేటాయింపులను కాన్ఫిగర్ చేయడానికి అడ్మిన్ పాస్‌కోడ్ అవసరం.",
+    security_passcode: "సెక్యూరిటీ పాస్‌కోడ్ *",
+    enter_passcode: "పాస్‌కోడ్‌ను నమోదు చేయండి",
+    show: "చూపించు",
+    hide: "దాచు",
+    authenticate_console: "కన్సోల్‌ను ప్రమాణీకరించండి",
+    return_to_customer: "← కస్టమర్ పోర్టల్‌కు తిరిగి వెళ్లండి",
+    lock: "లాక్",
     network_setup: "బ్రాంచ్ కార్యకలాపాల నిర్వహణ",
     register_branch_btn: "బ్రాంచ్‌ను నమోదు చేయండి",
     close_form_btn: "ఫారం మూసివేయండి",
@@ -298,5 +368,23 @@ export const translations: Record<Language, Record<string, string>> = {
     update_branch_btn: "బ్రాంచ్ వివరాలను అప్‌డేట్ చేయండి",
     staff_breakdown: "సిబ్బంది కేటాయింపు సారాంశం",
     registered_branches_list: "నమోదిత బ్యాంక్ బ్రాంచ్‌లు",
+    registered_branches_badge: "నమోదిత బ్రాంచ్‌లు",
+    no_branches_registered: "నమోదిత బ్యాంక్ బ్రాంచ్‌లు లేవు",
+    no_branches_registered_desc: "మొదటి బ్రాంచ్ స్థానం మరియు కౌంటర్ సిబ్బంది కేటాయింపుతో ప్రారంభించండి.",
+    location_prefix: "స్థానం",
+    contact_prefix: "సంప్రదించండి",
+
+    // Location Picker
+    osm_search_placeholder: "OpenStreetMap ద్వారా చిరునామాను శోధించండి (ఉదా: ముంబై, ఢిల్లీ, హైదరాబాద్)...",
+    use_gps: "GPS ఉపయోగించండి",
+    locating: "లొకేషన్ శోధిస్తోంది...",
+    osm_suggestions: "OpenStreetMap సూచనలు",
+    map_instructions: "బ్రాంచ్ కోఆర్డినేట్లను సెట్ చేయడానికి మ్యాప్‌ను క్లిక్ చేయండి లేదా పిన్‌ను లాగండి",
+    resolving_address: "చిరునామా కోఆర్డినేట్లను శోధిస్తోంది...",
+    branch_location_label: "బ్రాంచ్ స్థానం / చిరునామా *",
+    branch_location_placeholder: "ఎంచుకున్న బ్రాంచ్ చిరునామా ఇక్కడ కనిపిస్తుంది (లేదా టైప్ చేయండి)...",
+    latitude: "అక్షాంశం",
+    longitude: "రేఖాంశం",
+    view_on_osm: "OpenStreetMap లో వీక్షించండి ↗",
   },
 };

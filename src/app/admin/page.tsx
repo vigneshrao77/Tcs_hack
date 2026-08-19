@@ -299,8 +299,8 @@ export default function AdminPage() {
         <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
           <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden">
             <MacWindowHeader
-              title="Security Authorization"
-              subtitle="Operations Console"
+              title={t("security_auth")}
+              subtitle={t("admin_portal")}
             />
 
             <div className="p-6 sm:p-7 space-y-5">
@@ -309,10 +309,10 @@ export default function AdminPage() {
                   <LockIcon size={22} />
                 </div>
                 <h1 className="text-lg font-bold tracking-tight text-slate-900">
-                  Restricted Operations Console
+                  {t("restricted_ops_console")}
                 </h1>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                  Administrative passcode required to configure bank branches and staff deployments.
+                  {t("admin_passcode_req")}
                 </p>
               </div>
 
@@ -332,14 +332,14 @@ export default function AdminPage() {
               <form onSubmit={handleUnlockAdmin} className="space-y-4">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
-                    Security Passcode *
+                    {t("security_passcode")}
                   </label>
                   <div className="relative">
                     <input
                       type={showSecret ? "text" : "password"}
                       required
                       autoFocus
-                      placeholder="Enter Passcode"
+                      placeholder={t("enter_passcode")}
                       value={secretInput}
                       onChange={(e) => setSecretInput(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 font-mono text-xs tracking-widest placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
@@ -349,7 +349,7 @@ export default function AdminPage() {
                       onClick={() => setShowSecret(!showSecret)}
                       className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-slate-700 cursor-pointer font-medium"
                     >
-                      {showSecret ? "Hide" : "Show"}
+                      {showSecret ? t("hide") : t("show")}
                     </button>
                   </div>
                 </div>
@@ -358,7 +358,7 @@ export default function AdminPage() {
                   type="submit"
                   className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black text-white font-medium text-xs transition shadow-sm cursor-pointer border border-slate-900/50"
                 >
-                  Authenticate Console
+                  {t("authenticate_console")}
                 </button>
               </form>
 
@@ -367,7 +367,7 @@ export default function AdminPage() {
                   href="/dashboard"
                   className="text-xs text-slate-500 hover:text-slate-800 transition text-[11px]"
                 >
-                  ← Return to Customer Portal
+                  {t("return_to_customer")}
                 </Link>
               </div>
             </div>
@@ -453,7 +453,7 @@ export default function AdminPage() {
               onClick={handleLockAdmin}
               className="px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-700 border border-slate-300/80 hover:bg-slate-200/90 transition text-xs font-medium cursor-pointer"
             >
-              Lock
+              {t("lock")}
             </button>
           </div>
         </div>
@@ -489,7 +489,7 @@ export default function AdminPage() {
               {totalBranchesCount}
             </div>
             <div className="text-[10px] text-emerald-800 mt-0.5 font-medium">
-              Registered Branches
+              {t("registered_branches_badge")}
             </div>
           </div>
 
@@ -871,10 +871,10 @@ export default function AdminPage() {
         ) : branches.length === 0 ? (
           <div className="border border-slate-300/80 rounded-2xl p-10 text-center bg-white/80 backdrop-blur-md shadow-2xs">
             <h3 className="text-sm font-bold text-slate-900">
-              No Registered Bank Branches
+              {t("no_branches_registered")}
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Get started by registering the first branch location and counter staff allocation.
+              {t("no_branches_registered_desc")}
             </p>
             <button
               onClick={() => {
@@ -930,10 +930,10 @@ export default function AdminPage() {
                         </div>
                         <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-0.5 flex-wrap">
                           <span>
-                            Location: {branch.bankLocation}
+                            {t("location_prefix")}: {branch.bankLocation}
                           </span>
                           <span>
-                            Contact: {branch.bankPhone}
+                            {t("contact_prefix")}: {branch.bankPhone}
                           </span>
                           {coords && (
                             <a
@@ -975,22 +975,22 @@ export default function AdminPage() {
 
                     <div className="flex items-center gap-1.5 flex-wrap font-mono text-[10px]">
                       <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        Mgr: <strong>{staff.managers ?? 1}</strong>
+                        {t("mgr_label")}: <strong>{staff.managers ?? 1}</strong>
                       </span>
                       <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        Cash: <strong>{staff.cashCounters ?? 0}</strong>
+                        {t("cash_label")}: <strong>{staff.cashCounters ?? 0}</strong>
                       </span>
                       <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        Loans: <strong>{staff.loanOfficers ?? 0}</strong>
+                        {t("loan_label")}: <strong>{staff.loanOfficers ?? 0}</strong>
                       </span>
                       <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        Support: <strong>{staff.customerService ?? 0}</strong>
+                        {t("cust_svc_label")}: <strong>{staff.customerService ?? 0}</strong>
                       </span>
                       <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        KYC: <strong>{staff.accountAndKyc ?? 0}</strong>
+                        {t("kyc_label")}: <strong>{staff.accountAndKyc ?? 0}</strong>
                       </span>
                       <span className="bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-bold">
-                        Total: {branchTotal}
+                        {t("assigned_staff")} {branchTotal}
                       </span>
                     </div>
                   </div>

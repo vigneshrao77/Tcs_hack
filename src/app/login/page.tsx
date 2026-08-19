@@ -75,7 +75,7 @@ function LoginForm() {
         <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden">
           <MacWindowHeader
             title={t("login_title")}
-            subtitle="Core Banking Client"
+            subtitle={t("core_banking_client")}
           />
 
           <div className="p-6 sm:p-8 space-y-6">
