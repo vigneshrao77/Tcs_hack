@@ -30,6 +30,25 @@ export const translations: Record<Language, Record<string, string>> = {
     core_banking_client: "Core Banking Client",
     account_enrollment_assistant: "Account Enrollment Assistant",
 
+    // Gemini AI Advisor
+    ai_advisor_title: "Gemini AI Banking Advisor",
+    ai_advisor_subtitle: "Instant AI pre-screening: checks if you need to visit the branch in-person and lists all mandatory certificates & documents.",
+    ai_search_placeholder: "Type your banking query (e.g., 'Need ₹25 Lakh loan', 'Want to close savings account', 'Lost debit card', 'Update address')...",
+    ai_consult_btn: "Analyze with Gemini AI",
+    ai_analyzing: "Gemini AI analyzing requirements...",
+    ai_visit_required_badge: "Physical Branch Visit Required",
+    ai_visit_not_required_badge: "Branch Visit Not Required (Digital Resolution Available)",
+    ai_required_documents: "Required Documents & Certificates Checklist",
+    ai_prerequisites: "Prerequisites & Preparation Steps",
+    ai_digital_alternatives: "Instant Digital Self-Service Alternatives",
+    ai_best_time: "Recommended Low-Wait Visiting Window",
+    ai_est_counter_time: "Est. Counter Processing Time",
+    ai_mandatory: "Mandatory",
+    ai_optional: "Optional",
+    ai_get_ticket_btn: "Proceed to Issue Token Ticket",
+    ai_close_advisory: "Dismiss Advisory",
+    ai_quick_check: "Ask AI: Do I need to visit the branch?",
+
     // Dashboard & Profile
     welcome_back: "Welcome back",
     welcome: "Welcome",
@@ -222,6 +241,25 @@ export const translations: Record<Language, Record<string, string>> = {
     app_footer: "macOS కోర్ బ్యాంకింగ్ క్లయింట్ • ఆపరేటింగ్ సిస్టమ్ ఆపరేషన్స్ సూట్",
     core_banking_client: "కోర్ బ్యాంకింగ్ క్లయింట్",
     account_enrollment_assistant: "ఖాతా నమోదు సహాయకుడు",
+
+    // Gemini AI Advisor
+    ai_advisor_title: "జెమిని AI బ్యాంకింగ్ సలహాదారు",
+    ai_advisor_subtitle: "తక్షణ AI పరిశీలన: మీరు బ్రాంచ్‌కు రావలసిన అవసరం ఉందా మరియు అవసరమైన సర్టిఫికెట్లు & పత్రాల జాబితాను అందిస్తుంది.",
+    ai_search_placeholder: "మీ బ్యాంకింగ్ ప్రశ్నను టైప్ చేయండి (ఉదా: '₹25 లక్షల లోన్ కావాలి', 'ఖాతా మూసివేయాలి', 'డెబిట్ కార్డు పోయింది', 'చిరునామా మార్పు')...",
+    ai_consult_btn: "జెమిని AI తో విశ్లేషించండి",
+    ai_analyzing: "జెమిని AI విశ్లేషిస్తోంది...",
+    ai_visit_required_badge: "భౌతిక బ్రాంచ్ సందర్శన అవసరం",
+    ai_visit_not_required_badge: "బ్రాంచ్ సందర్శన అవసరం లేదు (ఆన్‌లైన్ పరిష్కారం అందుబాటులో ఉంది)",
+    ai_required_documents: "అవసరమైన పత్రాలు & సర్టిఫికెట్ల జాబితా",
+    ai_prerequisites: "సందర్శించే ముందు ముఖ్యమైన సన్నాహక దశలు",
+    ai_digital_alternatives: "తక్షణ డిజిటల్ స్వీయ-సేవ ప్రత్యామ్నాయాలు",
+    ai_best_time: "తక్కువ రద్దీ ఉండే సిఫార్సు సమయం",
+    ai_est_counter_time: "కౌంటర్ ప్రాసెసింగ్ సమయం (అంచనా)",
+    ai_mandatory: "తప్పనిసరి",
+    ai_optional: "ఐచ్ఛికం",
+    ai_get_ticket_btn: "క్యూ టోకెన్ పొందడానికి కొనసాగండి",
+    ai_close_advisory: "సలహాను మూసివేయండి",
+    ai_quick_check: "AI ని అడగండి: నేను బ్రాంచ్‌కు రావాలా?",
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",

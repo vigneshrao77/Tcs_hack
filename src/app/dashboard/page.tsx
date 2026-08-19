@@ -9,6 +9,7 @@ import {
 } from "@/types/serviceTypes";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import GeminiAdvisor from "@/components/GeminiAdvisor";
 import {
   BankIcon,
   CashIcon,
@@ -21,6 +22,7 @@ import {
   TicketIcon,
   ShieldCheckIcon,
   CheckIcon,
+  SparklesIcon,
 } from "@/components/BankIcons";
 
 interface CustomerUser {
@@ -619,6 +621,12 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Gemini AI Banking Advisor (Pre-screening & Document Checklist) */}
+        <GeminiAdvisor
+          initialService={selectedService}
+          onSelectService={(srv) => setSelectedService(srv)}
+        />
 
         {/* Section B: Service Type Selection Interface */}
         <section className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-5">
