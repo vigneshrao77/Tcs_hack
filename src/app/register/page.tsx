@@ -28,13 +28,6 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState<string>("");
   const [accountNumber, setAccountNumber] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
-  const [otpCode, setOtpCode] = useState<string>("");
-  const [isOtpSent, setIsOtpSent] = useState<boolean>(false);
-  const [isOtpVerified, setIsOtpVerified] = useState<boolean>(false);
-  const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState<boolean>(false);
-  const [otpSuccessNotice, setOtpSuccessNotice] = useState<string | null>(null);
-
   const [permanentAddress, setPermanentAddress] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -81,74 +74,7 @@ export default function RegisterPage() {
     setAccountNumber(`${formattedPrefix}-${randomDigits}`);
   };
 
-  // Send SMS Verification OTP
-  const handleSendOtp = async () => {
-    if (!phone || phone.trim().length < 8) {
-      setErrorAlert("Please enter a valid mobile number with country code (e.g. +91 9876543210 or +1 555...)");
-      return;
-    }
-
-    setIsSendingOtp(true);
-    setErrorAlert(null);
-    setOtpSuccessNotice(null);
-
-    try {
-      const res = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setIsOtpSent(true);
-        setOtpSuccessNotice(data.message || `Verification code sent via SMS to ${phone}`);
-      } else {
-        setErrorAlert(data.error || "Failed to dispatch SMS verification code");
-      }
-    } catch (err: unknown) {
-      setErrorAlert(
-        err instanceof Error ? err.message : "Network communication error"
-      );
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  // Verify OTP
-  const handleVerifyOtp = async () => {
-    if (!otpCode || otpCode.trim().length < 4) {
-      setErrorAlert("Please enter the 6-digit verification code received on your phone.");
-      return;
-    }
-
-    setIsVerifyingOtp(true);
-    setErrorAlert(null);
-
-    try {
-      const res = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp: otpCode }),
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setIsOtpVerified(true);
-        setOtpSuccessNotice("Mobile phone number verified successfully.");
-      } else {
-        setErrorAlert(data.error || "Invalid verification code");
-      }
-    } catch (err: unknown) {
-      setErrorAlert(
-        err instanceof Error ? err.message : "Network error during verification"
-      );
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  };
-
-  // Final Registration Submit
+  // Final Registration Submit - Stores Directly in MongoDB
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorAlert(null);
@@ -159,8 +85,13 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!isOtpVerified) {
-      setErrorAlert("Please complete mobile phone verification before submitting registration.");
+    if (!fullName.trim()) {
+      setErrorAlert("Please enter your full legal name.");
+      return;
+    }
+
+    if (!phone.trim()) {
+      setErrorAlert("Please enter your mobile phone number.");
       return;
     }
 
@@ -195,12 +126,15 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // Also save active session locally
+        localStorage.setItem("bank_user", JSON.stringify(data.data));
+
         setSuccessAlert(
-          `Account created successfully. Account Number: ${data.data.accountNumber}. Redirecting to sign in...`
+          `Account created and saved in database successfully! Account Number: ${data.data.accountNumber}. Redirecting to dashboard...`
         );
         setTimeout(() => {
-          router.push(`/login?account=${encodeURIComponent(data.data.accountNumber)}`);
-        }, 1500);
+          router.push("/dashboard");
+        }, 1200);
       } else {
         setErrorAlert(data.error || "Registration failed");
       }
@@ -220,34 +154,30 @@ export default function RegisterPage() {
         <LanguageSwitcher />
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
-        {/* Sleek macOS Modal Window Card */}
-        <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden">
-          <MacWindowHeader
-            title={t("register_title")}
-            subtitle={t("account_enrollment_assistant")}
-          />
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
+        <div className="text-center space-y-2 mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-white/80 text-slate-700 border border-slate-300/80 shadow-2xs backdrop-blur-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            <span>{t("account_enrollment_assistant")}</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            {t("register_page_title")}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+            {t("register_page_subtitle")}
+          </p>
+        </div>
+
+        {/* macOS Window Frame Card */}
+        <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] overflow-hidden">
+          <MacWindowHeader title={t("register_card_title")} subtitle="tcs-customer-registration" />
 
           <div className="p-6 sm:p-8 space-y-6">
-            {/* Header branding */}
-            <div className="text-center space-y-1">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-md mb-1">
-                <BankIcon size={22} />
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                {t("register_title")}
-              </h1>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                {t("register_subtitle")}
-              </p>
-            </div>
-
-            {/* Alerts */}
             {errorAlert && (
-              <div className="p-3 rounded-xl bg-rose-50/90 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between shadow-2xs">
+              <div className="p-3.5 rounded-xl bg-rose-50/90 border border-rose-200 text-rose-900 text-xs font-medium flex items-center justify-between shadow-2xs">
                 <span>{errorAlert}</span>
                 <button
-                  type="button"
                   onClick={() => setErrorAlert(null)}
                   className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
                 >
@@ -257,30 +187,14 @@ export default function RegisterPage() {
             )}
 
             {successAlert && (
-              <div className="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2 shadow-2xs">
-                <CheckIcon size={14} className="text-emerald-700 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-900 text-xs font-medium flex items-center gap-2 shadow-2xs">
+                <CheckIcon size={14} className="shrink-0" />
                 <span>{successAlert}</span>
               </div>
             )}
 
-            {otpSuccessNotice && (
-              <div className="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <CheckIcon size={14} className="text-emerald-700 shrink-0" />
-                  <span>{otpSuccessNotice}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOtpSuccessNotice(null)}
-                  className="opacity-70 hover:opacity-100 cursor-pointer font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
             <form onSubmit={handleRegister} className="space-y-6">
-              {/* Step 1: Branch & Account Selection */}
+              {/* Step 1: Branch & Identity Details */}
               <div className="space-y-4 border-b border-slate-200/80 pb-5">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-slate-200/80 text-slate-700 flex items-center justify-center text-[10px] font-bold">
@@ -293,37 +207,41 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                    {t("select_bank_branch")}
+                    {t("select_branch_label")}
                   </label>
                   {isLoadingBranches ? (
-                    <div className="text-xs text-slate-400">{t("loading")}</div>
-                  ) : branches.length === 0 ? (
-                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                      <span>{t("no_branches_warning")}</span>
-                    </div>
+                    <div className="h-10 rounded-xl bg-slate-100 animate-pulse border border-slate-200"></div>
                   ) : (
                     <select
                       value={selectedBankId}
                       onChange={(e) => handleBankChange(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner cursor-pointer"
                     >
                       {branches.map((b) => (
                         <option key={b._id} value={b._id}>
-                          {b.bankName} ({b.bankCode}) — {b.bankLocation}
+                          {b.bankName} — ({b.bankCode}) • {b.bankLocation}
                         </option>
                       ))}
                     </select>
+                  )}
+                  {selectedBank && (
+                    <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5 font-mono">
+                      <BankIcon size={12} />
+                      <span>
+                        {t("branch_helpline")}: {selectedBank.bankPhone}
+                      </span>
+                    </p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                    {t("full_name")}
+                    {t("full_legal_name")}
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Alexander Hamilton"
+                    placeholder="e.g. Rahul Sharma"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
@@ -333,7 +251,7 @@ export default function RegisterPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-[11px] font-medium text-slate-600">
-                      {t("unique_acc_label")}
+                      {t("account_number_label")}
                     </label>
                     {selectedBank && (
                       <button
@@ -367,85 +285,47 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Step 2: Mobile Phone Verification */}
+              {/* Step 2: Contact & Address */}
               <div className="space-y-4 border-b border-slate-200/80 pb-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-200/80 text-slate-700 flex items-center justify-center text-[10px] font-bold">
-                      2
-                    </span>
-                    <h2 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                      {t("step2_title")}
-                    </h2>
-                  </div>
-                  {isOtpVerified && (
-                    <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1 shadow-2xs">
-                      <CheckIcon size={12} />
-                      <span>{t("verified")}</span>
-                    </span>
-                  )}
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-slate-200/80 text-slate-700 flex items-center justify-center text-[10px] font-bold">
+                    2
+                  </span>
+                  <h2 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    {t("step2_title")}
+                  </h2>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-medium text-slate-600 mb-1">
                     {t("phone_label")}
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="tel"
-                      required
-                      disabled={isOtpVerified}
-                      placeholder="e.g. +91 9876543210 or +1 555 123 4567"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 transition shadow-inner"
-                    />
-                    {!isOtpVerified && (
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        disabled={isSendingOtp || !phone}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-2xs"
-                      >
-                        {isSendingOtp ? t("loading") : isOtpSent ? t("resend_otp") : t("send_otp")}
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 9876543210 or +91 9876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
+                  />
                 </div>
 
-                {/* OTP Entry Section */}
-                {isOtpSent && !isOtpVerified && (
-                  <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-300 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-[11px] font-semibold text-slate-700">
-                        {t("enter_otp_label")}
-                      </label>
-                      <span className="text-[10px] text-slate-400">{t("validity_prefix")}: 5 {t("mins")}</span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        maxLength={6}
-                        placeholder="123456"
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                        className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 font-mono tracking-widest text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-inner"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyOtp}
-                        disabled={isVerifyingOtp || otpCode.length < 4}
-                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-xs"
-                      >
-                        {isVerifyingOtp ? t("loading") : t("verify_otp_btn")}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    {t("permanent_address_label")}
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="Flat/House No., Street, City, State, PIN Code"
+                    value={permanentAddress}
+                    onChange={(e) => setPermanentAddress(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition resize-none shadow-inner"
+                  />
+                </div>
               </div>
 
-              {/* Step 3: Permanent Address & Credentials */}
+              {/* Step 3: Security & Credentials */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-slate-200/80 text-slate-700 flex items-center justify-center text-[10px] font-bold">
@@ -456,91 +336,76 @@ export default function RegisterPage() {
                   </h2>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                    {t("permanent_address")} *
-                  </label>
-                  <textarea
-                    rows={2}
-                    required
-                    placeholder="e.g. 142 Elm Street, Suite 4B, City, State, ZIP"
-                    value={permanentAddress}
-                    onChange={(e) => setPermanentAddress(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-none transition shadow-inner"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                      {t("set_password")}
+                      {t("account_password")}
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
-                      />
-                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-medium text-slate-600 mb-1">
                       {t("confirm_password")}
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
-                      />
-                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
+                    />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="showPassword"
-                    checked={showPassword}
-                    onChange={(e) => setShowPassword(e.target.checked)}
-                    className="rounded bg-white border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label htmlFor="showPassword" className="text-[11px] text-slate-600 cursor-pointer">
-                    {t("show_password")}
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 text-[11px]">
+                    <input
+                      type="checkbox"
+                      checked={showPassword}
+                      onChange={(e) => setShowPassword(e.target.checked)}
+                      className="rounded text-slate-900 focus:ring-slate-500"
+                    />
+                    <span>{t("show_passwords")}</span>
                   </label>
                 </div>
               </div>
 
               {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting || !isOtpVerified}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black active:to-slate-900 text-white font-medium text-xs transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 border border-slate-900/50"
-              >
-                {isSubmitting
-                  ? t("loading")
-                  : !isOtpVerified
-                  ? t("verify_otp_btn")
-                  : t("complete_reg_btn")}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black text-white text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 border border-slate-900/50"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>{t("creating_account")}</span>
+                    </div>
+                  ) : (
+                    <span>{t("complete_registration_btn")}</span>
+                  )}
+                </button>
+              </div>
             </form>
 
-            {/* Footer Navigation */}
             <div className="text-center pt-2 border-t border-slate-200/80">
-              <p className="text-[11px] text-slate-500">
-                {t("already_have_account")}{" "}
+              <p className="text-xs text-slate-500">
+                {t("already_registered")}{" "}
                 <Link
                   href="/login"
-                  className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-2 ml-1"
+                  className="font-semibold text-slate-900 hover:underline cursor-pointer"
                 >
-                  {t("sign_in_link")}
+                  {t("sign_in_now")}
                 </Link>
               </p>
             </div>

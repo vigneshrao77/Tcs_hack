@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import User from "@/models/User";
-import OtpToken from "@/models/OtpToken";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
@@ -46,28 +45,12 @@ export async function POST(req: NextRequest) {
 
     const formattedAccNumber = accountNumber.trim().toUpperCase();
     const cleanBankCode = bankCode.trim().toUpperCase();
-    const cleanBankNamePrefix = bankName.trim().replace(/\s+/g, "").toUpperCase();
 
-    // Check that Account Number starts with bank name or bank code
-    const startsWithBankCode = formattedAccNumber.startsWith(cleanBankCode);
-    const startsWithBankName = formattedAccNumber.startsWith(
-      cleanBankNamePrefix.substring(0, 4)
-    );
-
-    if (!startsWithBankCode && !startsWithBankName) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Account number must start with bank prefix "${cleanBankCode}" (e.g. ${cleanBankCode}-12345678)`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check for Duplicate Account Number
+    // Check for Duplicate Account Number in MongoDB
     const existingAccount = await User.findOne({
       accountNumber: formattedAccNumber,
     });
+
     if (existingAccount) {
       return NextResponse.json(
         {
@@ -86,32 +69,6 @@ export async function POST(req: NextRequest) {
       );
     }
     const cleanPhone = phone.trim();
-    let formattedPhone = cleanPhone.replace(/[\s()-]/g, "");
-    if (!formattedPhone.startsWith("+")) {
-      if (formattedPhone.length === 10 && /^[6-9]/.test(formattedPhone)) {
-        formattedPhone = `+91${formattedPhone}`;
-      } else if (formattedPhone.length === 10) {
-        formattedPhone = `+1${formattedPhone}`;
-      } else {
-        formattedPhone = `+${formattedPhone}`;
-      }
-    }
-
-    // Validate Phone OTP Verification
-    const verifiedOtp = await OtpToken.findOne({
-      $or: [{ phone: cleanPhone }, { phone: formattedPhone }],
-      verified: true,
-    });
-
-    if (!verifiedOtp) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Phone number has not been verified with SMS code. Please verify your mobile number before submitting.",
-        },
-        { status: 400 }
-      );
-    }
 
     // Validate Address
     if (
@@ -136,10 +93,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash Password
+    // Hash Password securely
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create User Document
+    // Create and Store User directly in MongoDB
     const newUser = await User.create({
       fullName: fullName.trim(),
       accountNumber: formattedAccNumber,
@@ -153,13 +110,10 @@ export async function POST(req: NextRequest) {
       role: "customer",
     });
 
-    // Clean up OTP token after successful registration
-    await OtpToken.deleteMany({ phone: cleanPhone });
-
     return NextResponse.json(
       {
         success: true,
-        message: "Customer registered successfully!",
+        message: "Customer registered and saved to MongoDB successfully!",
         data: {
           id: newUser._id,
           fullName: newUser.fullName,
@@ -175,7 +129,8 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: unknown) {
     const errorMessage =
-      error instanceof Error ? error.message : "Failed to register user";
+      error instanceof Error ? error.message : "Failed to register user in database";
+    console.error("User registration error:", error);
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
