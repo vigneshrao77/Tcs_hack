@@ -55,7 +55,10 @@ export const translations: Record<Language, Record<string, string>> = {
     detailed_explanation: "Detailed Query Explanation / Situation Details",
     detailed_explanation_placeholder: "Explain your specific requirement (e.g. loan amount, lost card date, previous account number, specific branch query)...",
     senior_voice_helper: "Senior Citizen Voice Assistant (Speak in English or తెలుగు)",
-
+    play_voice_advice: "🔊 Listen to AI Voice Advice",
+    stop_voice_advice: "⏹️ Stop Audio",
+    playing_audio: "Playing AI voice advice...",
+    speech_to_speech_badge: "Sarvam & Gemini Speech-to-Speech",
 
     // Dashboard & Profile
     welcome_back: "Welcome back",
@@ -275,7 +278,10 @@ export const translations: Record<Language, Record<string, string>> = {
     detailed_explanation: "వివరణాత్మక సమస్య / పరిస్థితి వివరాలు",
     detailed_explanation_placeholder: "మీ నిర్దిష్ట అవసరాన్ని వివరించండి (ఉదా: లోన్ మొత్తం, కార్డు పోయిన తేదీ, మునుపటి రిఫరెన్స్)...",
     senior_voice_helper: "సీనియర్ సిటిజన్స్ వాయిస్ అసిస్టెంట్ (తెలుగు లేదా ఇంగ్లీషులో మాట్లాడండి)",
-
+    play_voice_advice: "🔊 AI వాయిస్ సలహా వినండి",
+    stop_voice_advice: "⏹️ ఆడియో ఆపండి",
+    playing_audio: "AI వాయిస్ సలహా వినబడుతోంది...",
+    speech_to_speech_badge: "స్పీచ్-టు-స్పీచ్ అసిస్టెంట్",
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",

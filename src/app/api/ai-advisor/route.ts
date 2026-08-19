@@ -7,6 +7,7 @@ interface AIAdviceResponse {
   requiresVisit: boolean;
   visitVerdict: string;
   summary: string;
+  spokenSummary?: string;
   mappedDepartment: string;
   mappedEmployeeRole: string;
   mappedDesk: string;
@@ -582,6 +583,7 @@ Your task:
   "requiresVisit": boolean,
   "visitVerdict": "Brief punchy verdict headline in ${lang === "te" ? "Telugu" : "English"}",
   "summary": "Clear, direct 2-sentence explanation of why visit is/isn't needed in ${lang === "te" ? "Telugu" : "English"}",
+  "spokenSummary": "Natural spoken sentence for voice audio assistant in ${lang === "te" ? "Telugu" : "English"} explaining visit necessity and key documents",
   "mappedDepartment": "Department name in ${lang === "te" ? "Telugu" : "English"}",
   "mappedEmployeeRole": "Specific Officer Role (e.g. Senior Loan Officer / Cashier Counter) in ${lang === "te" ? "Telugu" : "English"}",
   "mappedDesk": "Desk/Counter name in ${lang === "te" ? "Telugu" : "English"}",

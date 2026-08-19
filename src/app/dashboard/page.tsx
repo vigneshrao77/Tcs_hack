@@ -23,6 +23,7 @@ import {
   CheckIcon,
   SparklesIcon,
   MicrophoneIcon,
+  SpeakerIcon,
   UserIcon,
 } from "@/components/BankIcons";
 
@@ -63,6 +64,7 @@ interface AIAdviceResponse {
   requiresVisit: boolean;
   visitVerdict: string;
   summary: string;
+  spokenSummary?: string;
   mappedDepartment: string;
   mappedEmployeeRole: string;
   mappedDesk: string;
@@ -136,6 +138,10 @@ export default function DashboardPage() {
   const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
   const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
 
+  // Speech-to-Speech State
+  const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [isSynthesizingSpeech, setIsSynthesizingSpeech] = useState<boolean>(false);
+
   const [isSubmittingToken, setIsSubmittingToken] = useState<boolean>(false);
   const [alertNotice, setAlertNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -144,6 +150,7 @@ export default function DashboardPage() {
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
   // Check Local Auth State on Mount
   useEffect(() => {
@@ -188,7 +195,19 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Helper for dynamic desk titles
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current = null;
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   const getCategoryDeskName = (category: CounterCategory, defaultLabel: string) => {
     switch (category) {
       case "cashCounters":
@@ -209,24 +228,31 @@ export default function DashboardPage() {
   const renderServiceIcon = (iconId: string, size = 16) => {
     switch (iconId) {
       case "CashIcon":
+      case "cash":
         return <CashIcon size={size} />;
       case "UserPlusIcon":
       case "AccountIcon":
+      case "account":
         return <AccountIcon size={size} />;
       case "BriefcaseIcon":
       case "LoanIcon":
+      case "loan":
         return <LoanIcon size={size} />;
       case "ShieldCheckIcon":
       case "KycIcon":
+      case "kyc":
         return <KycIcon size={size} />;
       case "FileTextIcon":
       case "ChequeIcon":
+      case "cheque":
         return <ChequeIcon size={size} />;
       case "MapPinIcon":
       case "AddressIcon":
+      case "address":
         return <AddressIcon size={size} />;
       case "CreditCardIcon":
       case "CardIcon":
+      case "card":
         return <CardIcon size={size} />;
       default:
         return <TicketIcon size={size} />;
@@ -239,8 +265,9 @@ export default function DashboardPage() {
     setDetailedExplanation("");
     setAiAdvice(null);
     setCheckedDocs({});
+    stopSpeechAudio();
 
-    fetchGeminiAdvice(serviceName, "");
+    fetchGeminiAdvice(serviceName, "", false);
 
     setTimeout(() => {
       drawerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -248,7 +275,11 @@ export default function DashboardPage() {
   };
 
   // Automatic Gemini AI Evaluation
-  const fetchGeminiAdvice = async (service: BankingServiceType, explanation: string) => {
+  const fetchGeminiAdvice = async (
+    service: BankingServiceType,
+    explanation: string,
+    autoPlayVoice = false
+  ) => {
     setIsAnalyzingAI(true);
     try {
       const res = await fetch("/api/ai-advisor", {
@@ -262,8 +293,14 @@ export default function DashboardPage() {
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && data.success && data.data) {
         setAiAdvice(data.data);
+
+        // Auto-play voice advice for Speech-to-Speech workflow
+        if (autoPlayVoice) {
+          const speechText = data.data.spokenSummary || data.data.summary || data.data.visitVerdict;
+          playSpeechAudio(speechText);
+        }
       }
     } catch (err) {
       console.error("AI Advisor evaluation failed:", err);
@@ -272,9 +309,96 @@ export default function DashboardPage() {
     }
   };
 
+  // Speech-to-Speech Audio Player Handler
+  const stopSpeechAudio = () => {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current = null;
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsPlayingAudio(false);
+    setIsSynthesizingSpeech(false);
+  };
+
+  const playSpeechAudio = async (customText?: string) => {
+    if (isPlayingAudio) {
+      stopSpeechAudio();
+      return;
+    }
+
+    const textToSpeak = (
+      customText ||
+      aiAdvice?.spokenSummary ||
+      aiAdvice?.summary ||
+      aiAdvice?.visitVerdict ||
+      ""
+    ).trim();
+
+    if (!textToSpeak) return;
+
+    setIsSynthesizingSpeech(true);
+
+    try {
+      const res = await fetch("/api/ai-speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: textToSpeak,
+          language: language === "te" ? "te" : "en",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.audioBase64) {
+        const audioSrc = `data:${data.mimeType || "audio/wav"};base64,${data.audioBase64}`;
+        const audio = new Audio(audioSrc);
+        audioElementRef.current = audio;
+
+        audio.onplay = () => {
+          setIsSynthesizingSpeech(false);
+          setIsPlayingAudio(true);
+        };
+        audio.onended = () => {
+          setIsPlayingAudio(false);
+          audioElementRef.current = null;
+        };
+        audio.onerror = () => {
+          setIsPlayingAudio(false);
+          setIsSynthesizingSpeech(false);
+        };
+
+        await audio.play();
+      } else if (typeof window !== "undefined" && window.speechSynthesis) {
+        // Fallback to browser Web Speech API
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = language === "te" ? "te-IN" : "en-IN";
+        utterance.onstart = () => {
+          setIsSynthesizingSpeech(false);
+          setIsPlayingAudio(true);
+        };
+        utterance.onend = () => {
+          setIsPlayingAudio(false);
+        };
+        utterance.onerror = () => {
+          setIsPlayingAudio(false);
+          setIsSynthesizingSpeech(false);
+        };
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (err) {
+      console.error("Speech synthesis failed:", err);
+      setIsPlayingAudio(false);
+      setIsSynthesizingSpeech(false);
+    }
+  };
+
   // Senior Citizen Voice-to-Text Input Handler using Sarvam AI STT
   const startVoiceInput = async () => {
     setVoiceStatusNotice(null);
+    stopSpeechAudio();
 
     // 1. Live speech feedback
     const win = typeof window !== "undefined" ? (window as any) : null;
@@ -357,7 +481,8 @@ export default function DashboardPage() {
             if (data.success && data.text) {
               setDetailedExplanation(data.text);
               if (selectedService) {
-                fetchGeminiAdvice(selectedService, data.text);
+                // Trigger Gemini evaluation and automatically speak back the advice (Speech-to-Speech)
+                fetchGeminiAdvice(selectedService, data.text, true);
               }
               setVoiceStatusNotice(`✓ Transcribed via Sarvam AI (saarika:v2.5)`);
               setTimeout(() => setVoiceStatusNotice(null), 4000);
@@ -404,6 +529,7 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
+    stopSpeechAudio();
     localStorage.removeItem("bank_user");
     setUser(null);
     setActiveToken(null);
@@ -441,6 +567,7 @@ export default function DashboardPage() {
         setActiveToken(data.data);
         setSelectedService(null);
         setDetailedExplanation("");
+        stopSpeechAudio();
         setAlertNotice({
           type: "success",
           text: `Queue Ticket ${data.data.tokenNumber} issued & mapped to ${data.data.assignedEmployeeName || "Officer"} at ${data.data.assignedDesk || "Counter"}.`,
@@ -810,7 +937,10 @@ export default function DashboardPage() {
 
                 <button
                   type="button"
-                  onClick={() => setSelectedService(null)}
+                  onClick={() => {
+                    stopSpeechAudio();
+                    setSelectedService(null);
+                  }}
                   className="text-xs text-gray-500 hover:text-gray-900 cursor-pointer"
                 >
                   {t("change_selection")}
@@ -854,14 +984,14 @@ export default function DashboardPage() {
                     const val = e.target.value;
                     setDetailedExplanation(val);
                     if (selectedService) {
-                      fetchGeminiAdvice(selectedService, val);
+                      fetchGeminiAdvice(selectedService, val, false);
                     }
                   }}
                   className="w-full px-3 py-2 rounded-md bg-white border border-gray-300 text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 resize-none"
                 />
               </div>
 
-              {/* Gemini AI Analysis Box */}
+              {/* Gemini AI Analysis Box & Speech-to-Speech Audio */}
               <div className="space-y-3 pt-1">
                 {isAnalyzingAI && (
                   <div className="p-3 rounded-md bg-white border border-gray-200 flex items-center gap-2 text-xs text-gray-600">
@@ -872,17 +1002,50 @@ export default function DashboardPage() {
 
                 {aiAdvice && !isAnalyzingAI && (
                   <div className="bg-white border border-gray-200 rounded-md p-4 space-y-3 shadow-xs">
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                    {/* Header with Speech-to-Speech Audio Controls */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
                       <div className="flex items-center gap-2">
                         <SparklesIcon size={14} className="text-gray-800" />
                         <span className="text-xs font-semibold text-gray-900">
                           {t("ai_advisor_title")}
                         </span>
                       </div>
-                      <span className="text-[10px] font-mono text-gray-500">
-                        Evaluated by Gemini
-                      </span>
+
+                      {/* Interactive Speech-to-Speech Audio Button */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => playSpeechAudio()}
+                          disabled={isSynthesizingSpeech}
+                          className={`text-xs px-2.5 py-1 rounded font-medium flex items-center gap-1.5 cursor-pointer transition-colors duration-100 ${
+                            isPlayingAudio
+                              ? "bg-gray-900 text-white shadow-xs"
+                              : "bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300"
+                          }`}
+                        >
+                          <SpeakerIcon size={12} className={isPlayingAudio ? "animate-pulse text-green-400" : "text-gray-700"} />
+                          <span>
+                            {isSynthesizingSpeech
+                              ? "Synthesizing voice..."
+                              : isPlayingAudio
+                              ? t("stop_voice_advice")
+                              : t("play_voice_advice")}
+                          </span>
+
+                          {/* Soundwave animation indicator when playing */}
+                          {isPlayingAudio && (
+                            <span className="inline-flex items-center gap-0.5 ml-1">
+                              <span className="w-1 h-3 bg-green-400 animate-pulse"></span>
+                              <span className="w-1 h-4 bg-green-400 animate-bounce"></span>
+                              <span className="w-1 h-2 bg-green-400 animate-pulse"></span>
+                            </span>
+                          )}
+                        </button>
+
+                        <span className="text-[10px] font-mono text-gray-500 hidden sm:inline">
+                          {t("speech_to_speech_badge")}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Verdict Banner */}
@@ -995,7 +1158,10 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedService(null)}
+                    onClick={() => {
+                      stopSpeechAudio();
+                      setSelectedService(null);
+                    }}
                     className="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded text-xs font-medium transition-colors cursor-pointer"
                   >
                     {t("cancel")}
