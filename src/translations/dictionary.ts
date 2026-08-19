@@ -18,6 +18,14 @@ export const translations: Record<Language, Record<string, string>> = {
     search: "Search",
     clear: "Clear",
 
+    // Auth Gate / Welcome Screen
+    auth_gate_title: "Customer Banking & Token Portal",
+    auth_gate_subtitle: "Please sign in to your existing account or open a new account to access services and request queue tokens.",
+    gate_signin_btn: "🔐 Sign In to Account",
+    gate_register_btn: "📝 Open New Account (Twilio OTP)",
+    gate_or: "OR",
+    features_intro: "Fast-track your branch visit with instant digital tokens and live queue updates.",
+
     // Dashboard & Profile
     welcome_back: "Welcome back",
     welcome: "Welcome",
@@ -158,6 +166,14 @@ export const translations: Record<Language, Record<string, string>> = {
     search_placeholder: "బ్యాంక్ పేరు, కోడ్, ప్రాంతం లేదా ఫోన్ ద్వారా శోధించండి...",
     search: "శోధించండి",
     clear: "క్లియర్",
+
+    // Auth Gate / Welcome Screen
+    auth_gate_title: "కస్టమర్ బ్యాంకింగ్ & టోకెన్ పోర్టల్",
+    auth_gate_subtitle: "సేవలను పొందడానికి మరియు క్యూ టోకెన్లు జారీ చేసుకోవడానికి దయచేసి మీ ఖాతాలోకి సైన్ ఇన్ చేయండి లేదా కొత్త ఖాతాను తెరవండి.",
+    gate_signin_btn: "🔐 ఖాతాలోకి సైన్ ఇన్ చేయండి",
+    gate_register_btn: "📝 కొత్త ఖాతా తెరవండి (Twilio OTP)",
+    gate_or: "లేదా",
+    features_intro: "లైవ్ డిజిటల్ టోకెన్లతో వేచి ఉండాల్సిన అవసరం లేని స్మార్ట్ బ్యాంకింగ్ సేవలను పొందండి.",
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",

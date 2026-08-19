@@ -62,8 +62,9 @@ export default function DashboardPage() {
   const { t } = useLanguage();
 
   const [user, setUser] = useState<CustomerUser | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [activeToken, setActiveToken] = useState<ActiveToken | null>(null);
-  const [isLoadingToken, setIsLoadingToken] = useState<boolean>(true);
+  const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
   const [selectedService, setSelectedService] = useState<BankingServiceType | null>(null);
   const [notes, setNotes] = useState<string>("");
   const [isSubmittingToken, setIsSubmittingToken] = useState<boolean>(false);
@@ -76,19 +77,20 @@ export default function DashboardPage() {
   // Load User from LocalStorage
   useEffect(() => {
     const raw = localStorage.getItem("bank_user");
-    if (!raw) {
-      router.push("/login");
-      return;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      } catch {
+        setUser(null);
+      }
+    } else {
+      setUser(null);
     }
-    try {
-      const parsed = JSON.parse(raw);
-      setUser(parsed);
-    } catch {
-      router.push("/login");
-    }
-  }, [router]);
+    setIsCheckingAuth(false);
+  }, []);
 
-  // Fetch Active Token
+  // Fetch Active Token when user is loaded
   const fetchActiveToken = async (accountNumber: string, bankCode: string) => {
     try {
       setIsLoadingToken(true);
@@ -116,7 +118,8 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("bank_user");
-    router.push("/login");
+    setUser(null);
+    setActiveToken(null);
   };
 
   const handleCopyAccount = () => {
@@ -191,9 +194,10 @@ export default function DashboardPage() {
     }
   };
 
-  if (!user) {
+  // Initial Auth Check Spinner
+  if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-400 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-slate-400 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center space-y-3">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-xs">{t("loading")}</p>
@@ -202,6 +206,122 @@ export default function DashboardPage() {
     );
   }
 
+  // If user is NOT logged in, show the Landing Gateway asking to Sign In or Create Account
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between">
+        {/* Top Navbar */}
+        <nav className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🏦</span>
+              <span className="font-bold text-white text-sm sm:text-base">
+                {t("app_title")}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher />
+              <Link
+                href="/admin"
+                className="text-xs text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 transition hidden sm:inline-block"
+              >
+                {t("admin_portal")}
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Auth Gateway */}
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 flex flex-col items-center justify-center text-center space-y-8">
+          <div className="space-y-4 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span>🎟️</span>
+              Smart Queue & Counter Routing System
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              {t("auth_gate_title")}
+            </h1>
+
+            <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+              {t("auth_gate_subtitle")}
+            </p>
+          </div>
+
+          {/* Primary Action Buttons: Sign In / Create Account */}
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4">
+            <Link
+              href="/login"
+              className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>{t("gate_signin_btn")}</span>
+            </Link>
+
+            <div className="relative flex items-center justify-center">
+              <div className="border-t border-slate-800 w-full"></div>
+              <span className="bg-slate-900 px-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                {t("gate_or")}
+              </span>
+              <div className="border-t border-slate-800 w-full"></div>
+            </div>
+
+            <Link
+              href="/register"
+              className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm border border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>{t("gate_register_btn")}</span>
+            </Link>
+
+            <div className="pt-2 text-center">
+              <Link
+                href="/admin"
+                className="text-xs text-slate-500 hover:text-slate-400 transition underline"
+              >
+                {t("admin_portal")} →
+              </Link>
+            </div>
+          </div>
+
+          {/* 8 Services Preview Banner */}
+          <div className="w-full pt-8 border-t border-slate-900 space-y-4 text-left">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 text-center">
+              Available Banking Services
+            </h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {SERVICE_OPTIONS.map((srv) => {
+                const meta = SERVICE_CATEGORY_MAP[srv];
+                const keys = SERVICE_KEYS[srv];
+                return (
+                  <div
+                    key={srv}
+                    className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs flex items-center gap-2.5"
+                  >
+                    <span className="text-xl">{meta.icon}</span>
+                    <div>
+                      <div className="font-semibold text-white truncate">
+                        {t(keys.nameKey)}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        {meta.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </main>
+
+        <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-600">
+          Branch Queue & Customer Management Suite • Powered by Next.js & MongoDB
+        </footer>
+      </div>
+    );
+  }
+
+  // If user IS logged in, render active dashboard
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
       {/* Top Navbar with Language Switcher */}
