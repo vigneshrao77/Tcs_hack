@@ -44,9 +44,19 @@ interface BankBranch {
   createdAt: string;
 }
 
+const ADMIN_SECRET_CODE = "123456789";
+
 export default function AdminPage() {
   const { t } = useLanguage();
 
+  // Admin Passcode Authorization State
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(false);
+  const [secretInput, setSecretInput] = useState<string>("");
+  const [secretError, setSecretError] = useState<string | null>(null);
+  const [showSecret, setShowSecret] = useState<boolean>(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+
+  // Bank Management State
   const [branches, setBranches] = useState<BankBranch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -74,6 +84,33 @@ export default function AdminPage() {
     text: string;
   } | null>(null);
 
+  // Verify sessionStorage on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem("admin_secret_auth");
+    if (stored === ADMIN_SECRET_CODE) {
+      setIsAdminUnlocked(true);
+    }
+    setIsCheckingAuth(false);
+  }, []);
+
+  const handleUnlockAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (secretInput.trim() === ADMIN_SECRET_CODE) {
+      sessionStorage.setItem("admin_secret_auth", ADMIN_SECRET_CODE);
+      setIsAdminUnlocked(true);
+      setSecretError(null);
+      setSecretInput("");
+    } else {
+      setSecretError("Invalid Admin Secret Code. Access Denied.");
+    }
+  };
+
+  const handleLockAdmin = () => {
+    sessionStorage.removeItem("admin_secret_auth");
+    setIsAdminUnlocked(false);
+    setShowForm(false);
+  };
+
   const fetchBranches = async (query = "") => {
     try {
       setIsLoading(true);
@@ -91,8 +128,10 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetchBranches();
-  }, []);
+    if (isAdminUnlocked) {
+      fetchBranches();
+    }
+  }, [isAdminUnlocked]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,6 +205,7 @@ export default function AdminPage() {
       bankCode: bankCode.toUpperCase(),
       staffing,
       status: formStatus,
+      secretCode: ADMIN_SECRET_CODE,
     };
 
     try {
@@ -174,7 +214,10 @@ export default function AdminPage() {
 
       const res = await fetch(endpoint, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": ADMIN_SECRET_CODE,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -212,7 +255,12 @@ export default function AdminPage() {
     }
 
     try {
-      const res = await fetch(`/api/banks/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/banks/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-admin-secret": ADMIN_SECRET_CODE,
+        },
+      });
       const data = await res.json();
       if (res.ok && data.success) {
         fetchBranches(searchQuery);
@@ -224,6 +272,100 @@ export default function AdminPage() {
       alert("Failed to delete branch due to network error");
     }
   };
+
+  // Initial Auth Check Spinner
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-sans">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // If Admin is NOT Unlocked, show Passcode Gate Screen
+  if (!isAdminUnlocked) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
+          <LanguageSwitcher />
+        </div>
+
+        <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-3xl shadow-inner animate-pulse">
+              🔒
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+              Restricted Admin Authorization
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-400">
+              This area is restricted to authorized personnel. Enter your secret passcode to access bank creation and staff configurations.
+            </p>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
+            {secretError && (
+              <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center justify-between">
+                <span>⚠️ {secretError}</span>
+                <button
+                  type="button"
+                  onClick={() => setSecretError(null)}
+                  className="opacity-70 hover:opacity-100 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <form onSubmit={handleUnlockAdmin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  Admin Secret Code *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showSecret ? "text" : "password"}
+                    required
+                    autoFocus
+                    placeholder="Enter 9-digit Secret Code"
+                    value={secretInput}
+                    onChange={(e) => setSecretInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-sm tracking-widest placeholder-slate-600 focus:outline-none focus:border-rose-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecret(!showSecret)}
+                    className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    {showSecret ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Required to register banks or adjust staff allocations
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>🔓 Unlock Admin Portal</span>
+              </button>
+            </form>
+
+            <div className="pt-3 border-t border-slate-800 text-center">
+              <Link
+                href="/dashboard"
+                className="text-xs text-slate-500 hover:text-slate-400 transition"
+              >
+                ← Return to Customer Portal
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Metrics calculations
   const totalBranchesCount = branches.length;
@@ -255,9 +397,10 @@ export default function AdminPage() {
     (staffing.customerService || 0) +
     (staffing.accountAndKyc || 0);
 
+  // Render Unlocked Admin Portal
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
-      {/* Top Navigation with Language Switcher */}
+      {/* Top Navigation */}
       <nav className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -276,18 +419,6 @@ export default function AdminPage() {
             {/* Language Switcher */}
             <LanguageSwitcher />
 
-            <Link
-              href="/register"
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition hidden sm:flex items-center gap-1"
-            >
-              <span>👤 {t("register_user")}</span>
-            </Link>
-            <Link
-              href="/login"
-              className="text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-950 transition hidden sm:inline-block"
-            >
-              {t("customer_signin")}
-            </Link>
             <button
               onClick={() => {
                 if (showForm && !editingBranchId) {
@@ -300,6 +431,13 @@ export default function AdminPage() {
               className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs transition shadow flex items-center gap-1.5 cursor-pointer"
             >
               <span>{showForm ? t("close_form_btn") : t("register_branch_btn")}</span>
+            </button>
+
+            <button
+              onClick={handleLockAdmin}
+              className="px-3 py-1.5 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/60 transition text-xs font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <span>🔒 Lock Console</span>
             </button>
           </div>
         </div>

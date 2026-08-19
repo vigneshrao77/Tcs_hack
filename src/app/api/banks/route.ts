@@ -43,6 +43,19 @@ export async function POST(req: NextRequest) {
     await connectToDatabase();
     const body = await req.json();
 
+    const secretHeader = req.headers.get("x-admin-secret");
+    const secretFromReq = secretHeader || body.secretCode;
+
+    if (secretFromReq !== "123456789") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized: Invalid or missing Admin Secret Code (123456789 required).",
+        },
+        { status: 403 }
+      );
+    }
+
     const { bankName, bankLocation, bankPhone, bankCode, staffing, status } =
       body;
 

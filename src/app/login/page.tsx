@@ -174,14 +174,6 @@ function LoginForm() {
                 {t("register_with_twilio")}
               </Link>
             </p>
-            <div>
-              <Link
-                href="/admin"
-                className="text-slate-500 hover:text-slate-400 transition"
-              >
-                {t("admin_portal")}
-              </Link>
-            </div>
           </div>
         </div>
       </div>

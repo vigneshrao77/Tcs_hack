@@ -36,6 +36,19 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const body = await req.json();
 
+    const secretHeader = req.headers.get("x-admin-secret");
+    const secretFromReq = secretHeader || body.secretCode;
+
+    if (secretFromReq !== "123456789") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized: Invalid or missing Admin Secret Code (123456789 required).",
+        },
+        { status: 403 }
+      );
+    }
+
     const updateData: Record<string, unknown> = {};
 
     if (body.bankName) updateData.bankName = body.bankName.trim();
@@ -109,6 +122,17 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     await connectToDatabase();
     const { id } = await params;
+
+    const secretHeader = req.headers.get("x-admin-secret");
+    if (secretHeader !== "123456789") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized: Invalid or missing Admin Secret Code (123456789 required).",
+        },
+        { status: 403 }
+      );
+    }
 
     const deleted = await BankBranch.findByIdAndDelete(id);
     if (!deleted) {

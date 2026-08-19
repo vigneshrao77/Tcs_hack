@@ -285,14 +285,8 @@ export default function RegisterPage() {
                 {isLoadingBranches ? (
                   <div className="text-xs text-slate-400">{t("loading")}</div>
                 ) : branches.length === 0 ? (
-                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center justify-between">
-                    <span>No bank branches registered yet.</span>
-                    <Link
-                      href="/admin"
-                      className="underline font-bold text-amber-200 hover:text-white"
-                    >
-                      Register a branch in Admin →
-                    </Link>
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                    <span>No bank branches registered yet. Please contact system administrator.</span>
                   </div>
                 ) : (
                   <select

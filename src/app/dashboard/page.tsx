@@ -222,12 +222,6 @@ export default function DashboardPage() {
 
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
-              <Link
-                href="/admin"
-                className="text-xs text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 transition hidden sm:inline-block"
-              >
-                {t("admin_portal")}
-              </Link>
             </div>
           </div>
         </nav>
@@ -272,15 +266,6 @@ export default function DashboardPage() {
             >
               <span>{t("gate_register_btn")}</span>
             </Link>
-
-            <div className="pt-2 text-center">
-              <Link
-                href="/admin"
-                className="text-xs text-slate-500 hover:text-slate-400 transition underline"
-              >
-                {t("admin_portal")} →
-              </Link>
-            </div>
           </div>
 
           {/* 8 Services Preview Banner */}
@@ -343,12 +328,6 @@ export default function DashboardPage() {
             {/* Language Switcher Widget */}
             <LanguageSwitcher />
 
-            <Link
-              href="/admin"
-              className="text-xs text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 transition hidden sm:inline-block"
-            >
-              {t("admin_portal")}
-            </Link>
             <button
               onClick={handleLogout}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/60 transition cursor-pointer"
