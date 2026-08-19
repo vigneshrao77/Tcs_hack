@@ -65,7 +65,13 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#111827] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       {/* Top Bar */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-8 flex items-center gap-2.5">
+        <Link
+          href="/bank/employee"
+          className="text-xs font-medium text-gray-700 hover:text-gray-900 border border-gray-300 bg-white px-2.5 py-1 rounded-md"
+        >
+          🏢 Staff Counter
+        </Link>
         <LanguageSwitcher />
       </div>
 

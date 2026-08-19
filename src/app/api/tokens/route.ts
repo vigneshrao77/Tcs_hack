@@ -172,40 +172,40 @@ export async function POST(req: NextRequest) {
 
     // Determine staffing parameters
     let staffCount = 1;
-    let employeePrefix = "EMP";
-    let roleTitle = "Officer";
-    let deskTitle = "Desk";
+    let domainCode = "CS";
+    let roleTitle = "Cash Officer";
+    let deskTitle = "Cash Counter";
 
     if (branch && branch.staffing) {
       const s = branch.staffing;
       switch (meta.category) {
         case "cashCounters":
           staffCount = Math.max(1, s.cashCounters || 1);
-          employeePrefix = "CSH";
-          roleTitle = "Cashier";
+          domainCode = "CS";
+          roleTitle = "Cash Officer";
           deskTitle = "Cash Counter";
           break;
         case "loanOfficers":
           staffCount = Math.max(1, s.loanOfficers || 1);
-          employeePrefix = "LNO";
-          roleTitle = "Loan & Credit Officer";
+          domainCode = "LD";
+          roleTitle = "Loan Officer";
           deskTitle = "Loan Desk";
           break;
         case "accountAndKyc":
           staffCount = Math.max(1, s.accountAndKyc || 1);
-          employeePrefix = "KYC";
-          roleTitle = "KYC & Account Specialist";
-          deskTitle = "KYC Desk";
+          domainCode = "KYC";
+          roleTitle = "KYC & Account Officer";
+          deskTitle = "Account & KYC Desk";
           break;
         case "customerService":
           staffCount = Math.max(1, s.customerService || 1);
-          employeePrefix = "CSR";
-          roleTitle = "Customer Support Executive";
-          deskTitle = "Service Desk";
+          domainCode = "HD";
+          roleTitle = "Help Desk Officer";
+          deskTitle = "Customer Help Desk";
           break;
         case "managers":
           staffCount = Math.max(1, s.managers || 1);
-          employeePrefix = "MGR";
+          domainCode = "BM";
           roleTitle = "Branch Manager";
           deskTitle = "Manager Chamber";
           break;
@@ -214,9 +214,7 @@ export async function POST(req: NextRequest) {
 
     // Load-balanced round-robin employee assignment
     const employeeIndex = (countToday % Math.max(1, staffCount)) + 1;
-    const assignedEmployeeId = `${employeePrefix}-${employeeIndex
-      .toString()
-      .padStart(2, "0")}`;
+    const assignedEmployeeId = `${user.bankCode}${domainCode}_${employeeIndex}`;
     const assignedEmployeeName = `${roleTitle} #${employeeIndex}`;
     const assignedDesk = `${deskTitle} #${employeeIndex}`;
 

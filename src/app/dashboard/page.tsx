@@ -736,6 +736,13 @@ export default function DashboardPage() {
               <span className="text-gray-900 font-medium">{user.accountNumber}</span>
             </div>
 
+            <Link
+              href="/bank/employee"
+              className="text-xs font-medium px-2.5 py-1 rounded bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-300 transition-colors"
+            >
+              🏢 Staff Counter
+            </Link>
+
             <LanguageSwitcher />
 
             <button

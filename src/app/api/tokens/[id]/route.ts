@@ -7,6 +7,53 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+export async function PATCH(req: NextRequest, { params }: RouteParams) {
+  try {
+    await connectToDatabase();
+    const { id } = await params;
+    const body = await req.json();
+    const { status, assignedEmployeeId, assignedEmployeeName, assignedDesk } = body;
+
+    const token = await ServiceToken.findById(id);
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Token not found" },
+        { status: 404 }
+      );
+    }
+
+    if (status) {
+      token.status = status;
+    }
+    if (assignedEmployeeId) {
+      token.assignedEmployeeId = assignedEmployeeId;
+    }
+    if (assignedEmployeeName) {
+      token.assignedEmployeeName = assignedEmployeeName;
+    }
+    if (assignedDesk) {
+      token.assignedDesk = assignedDesk;
+    }
+
+    await token.save();
+
+    return NextResponse.json({
+      success: true,
+      message: `Token ${token.tokenNumber} updated to status: ${token.status}`,
+      data: token,
+    });
+  } catch (error: unknown) {
+    console.error("Token update error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to update token",
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     const ip = getClientIp(req);
