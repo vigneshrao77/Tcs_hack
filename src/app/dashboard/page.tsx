@@ -334,7 +334,11 @@ export default function DashboardPage() {
               if (selectedService) {
                 fetchGeminiAdvice(selectedService, data.text);
               }
-              setVoiceStatusNotice(t("voice_converted"));
+              setVoiceStatusNotice(`✓ Transcribed via Sarvam AI (saarika:v2.5)`);
+              setTimeout(() => setVoiceStatusNotice(null), 4000);
+            } else if (data.error) {
+              setVoiceStatusNotice(`Sarvam AI: ${data.error}`);
+              setTimeout(() => setVoiceStatusNotice(null), 4000);
             } else {
               setVoiceStatusNotice(null);
             }

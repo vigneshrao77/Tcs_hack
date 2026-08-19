@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
 import { checkRateLimit, getClientIp } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
-    // Rate limit: Max 20 transcription requests per minute per IP
-    const rate = checkRateLimit(`transcribe:${ip}`, 20, 60 * 1000);
+    // Rate limit: Max 30 transcription requests per minute per IP
+    const rate = checkRateLimit(`transcribe:${ip}`, 30, 60 * 1000);
     if (!rate.allowed) {
       return NextResponse.json(
         { success: false, error: "Speech transcription rate limit exceeded. Please wait a moment." },
@@ -19,12 +18,12 @@ export async function POST(req: NextRequest) {
 
     if (!audioBase64 || typeof audioBase64 !== "string") {
       return NextResponse.json(
-        { success: false, error: "Audio data is required" },
+        { success: false, error: "Audio data is required for Sarvam AI transcription" },
         { status: 400 }
       );
     }
 
-    // Security: Enforce maximum payload size (10MB base64 limit ~ 7.5MB raw audio)
+    // Security: Enforce maximum payload size (10MB limit)
     if (audioBase64.length > 10 * 1024 * 1024) {
       return NextResponse.json(
         { success: false, error: "Audio file exceeds maximum allowed size of 10MB." },
@@ -32,100 +31,65 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sarvamApiKey = process.env.SARVAM_API_KEY;
-    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const sarvamApiKey = (process.env.SARVAM_API_KEY || "").trim();
     const isTelugu = language === "te";
 
-    // 1. Primary STT: Sarvam AI (Model: saarika:v2.5)
-    if (sarvamApiKey) {
-      try {
-        const audioBuffer = Buffer.from(audioBase64, "base64");
-        const ext = mimeType.includes("wav") ? "wav" : mimeType.includes("mp3") ? "mp3" : "webm";
-
-        const formData = new FormData();
-        const blob = new Blob([audioBuffer], { type: mimeType });
-        formData.append("file", blob, `voice.${ext}`);
-        formData.append("model", "saarika:v2.5");
-        formData.append("language_code", isTelugu ? "te-IN" : "en-IN");
-        formData.append("with_diacritics", "true");
-
-        const sarvamRes = await fetch("https://api.sarvam.ai/speech-to-text", {
-          method: "POST",
-          headers: {
-            "api-subscription-key": sarvamApiKey.trim(),
-          },
-          body: formData,
-        });
-
-        if (sarvamRes.ok) {
-          const sarvamData = await sarvamRes.json();
-          const transcript = (sarvamData.transcript || sarvamData.text || "").trim();
-          if (transcript) {
-            return NextResponse.json({
-              success: true,
-              text: transcript,
-              engine: "Sarvam AI (saarika:v2.5)",
-            });
-          }
-        } else {
-          const errText = await sarvamRes.text();
-          console.warn("Sarvam AI STT error:", sarvamRes.status, errText);
-        }
-      } catch (sarvamErr) {
-        console.warn("Sarvam AI call exception:", sarvamErr);
-      }
+    if (!sarvamApiKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "SARVAM_API_KEY is not configured in .env.local. Please add your Sarvam AI API key.",
+        },
+        { status: 500 }
+      );
     }
 
-    // 2. Secondary Fallback STT: Google Gemini (gemini-1.5-flash)
-    if (geminiApiKey) {
-      try {
-        const ai = new GoogleGenAI({ apiKey: geminiApiKey.trim() });
-        const response = await ai.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  inlineData: {
-                    mimeType,
-                    data: audioBase64,
-                  },
-                },
-                {
-                  text: isTelugu
-                    ? "Transcribe this Indian voice recording accurately into Telugu script. Return ONLY the transcribed text without extra formatting."
-                    : "Transcribe this Indian voice recording accurately into clear English text. Return ONLY the transcribed text without extra formatting.",
-                },
-              ],
-            },
-          ],
-        });
+    // Convert Base64 to binary buffer and send directly to Sarvam AI STT API
+    const audioBuffer = Buffer.from(audioBase64, "base64");
+    const ext = mimeType.includes("wav") ? "wav" : mimeType.includes("mp3") ? "mp3" : "webm";
 
-        const transcribedText = response.text?.trim() || "";
-        if (transcribedText) {
-          return NextResponse.json({
-            success: true,
-            text: transcribedText,
-            engine: "Gemini 1.5 Flash STT",
-          });
-        }
-      } catch (geminiError) {
-        console.warn("Gemini transcription fallback error:", geminiError);
-      }
+    const formData = new FormData();
+    const blob = new Blob([audioBuffer], { type: mimeType });
+    formData.append("file", blob, `voice.${ext}`);
+    formData.append("model", "saarika:v2.5");
+    formData.append("language_code", isTelugu ? "te-IN" : "en-IN");
+    formData.append("with_diacritics", "true");
+
+    const sarvamRes = await fetch("https://api.sarvam.ai/speech-to-text", {
+      method: "POST",
+      headers: {
+        "api-subscription-key": sarvamApiKey,
+      },
+      body: formData,
+    });
+
+    if (!sarvamRes.ok) {
+      const errBody = await sarvamRes.text();
+      console.error("Sarvam AI Speech-to-Text API Error:", sarvamRes.status, errBody);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Sarvam AI STT Error (${sarvamRes.status}): ${errBody}`,
+        },
+        { status: sarvamRes.status }
+      );
     }
+
+    const sarvamData = await sarvamRes.json();
+    const transcript = (sarvamData.transcript || sarvamData.text || "").trim();
 
     return NextResponse.json({
       success: true,
-      text: isTelugu ? "బ్యాంకింగ్ సేవా అభ్యర్థన" : "General banking inquiry",
-      engine: "Fallback",
+      text: transcript,
+      language_code: sarvamData.language_code || (isTelugu ? "te-IN" : "en-IN"),
+      engine: "Sarvam AI (saarika:v2.5)",
     });
   } catch (error: unknown) {
-    console.error("Transcription error:", error);
+    console.error("Sarvam AI Transcription Exception:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to transcribe audio",
+        error: error instanceof Error ? error.message : "Failed to transcribe audio via Sarvam AI",
       },
       { status: 500 }
     );
