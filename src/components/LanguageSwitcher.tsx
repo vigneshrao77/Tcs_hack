@@ -7,13 +7,13 @@ export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <div className="inline-flex items-center rounded-md bg-slate-100 p-0.5 border border-slate-200 shadow-2xs font-sans">
+    <div className="inline-flex items-center rounded-lg bg-slate-200/70 p-0.5 border border-black/5 shadow-inner backdrop-blur-md">
       <button
         type="button"
         onClick={() => setLanguage("en")}
-        className={`px-2.5 py-1 text-xs font-semibold rounded transition cursor-pointer ${
+        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all duration-150 cursor-pointer ${
           language === "en"
-            ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
+            ? "bg-white text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.12)] font-semibold"
             : "text-slate-600 hover:text-slate-900"
         }`}
       >
@@ -23,9 +23,9 @@ export default function LanguageSwitcher() {
       <button
         type="button"
         onClick={() => setLanguage("te")}
-        className={`px-2.5 py-1 text-xs font-semibold rounded transition cursor-pointer ${
+        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all duration-150 cursor-pointer ${
           language === "te"
-            ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
+            ? "bg-white text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.12)] font-semibold"
             : "text-slate-600 hover:text-slate-900"
         }`}
       >

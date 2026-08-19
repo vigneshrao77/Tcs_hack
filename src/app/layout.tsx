@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bank Operations & Customer Portal",
-  description: "Smart bank queue management and service optimization suite",
+  title: "Core Banking • Operations & Queue Suite",
+  description: "Enterprise bank operations, counter token dispatch, and queue analytics",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
+      <body className="min-h-full flex flex-col bg-[#f5f5f7] text-[#1d1d1f] selection:bg-blue-500/20 selection:text-blue-900">
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>

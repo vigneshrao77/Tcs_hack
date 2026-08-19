@@ -9,6 +9,7 @@ import {
 } from "@/types/serviceTypes";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import MacWindowHeader from "@/components/MacWindowHeader";
 import {
   BankIcon,
   CashIcon,
@@ -20,7 +21,6 @@ import {
   CardIcon,
   TicketIcon,
   ShieldCheckIcon,
-  UserIcon,
   CheckIcon,
 } from "@/components/BankIcons";
 
@@ -71,7 +71,7 @@ const SERVICE_OPTIONS: BankingServiceType[] = [
   "Card services",
 ];
 
-const renderServiceIcon = (iconId: string, size = 20) => {
+const renderServiceIcon = (iconId: string, size = 18) => {
   switch (iconId) {
     case "cash":
       return <CashIcon size={size} />;
@@ -232,27 +232,27 @@ export default function DashboardPage() {
   // Initial Auth Check Spinner
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-500 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#f5f5f7] text-slate-500 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center space-y-3">
-          <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-7 h-7 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-xs">{t("loading")}</p>
         </div>
       </div>
     );
   }
 
-  // If user is NOT logged in, show the clean Institutional Gateway
+  // If user is NOT logged in, show sleek macOS Welcome Screen
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
-        {/* Top Navbar */}
-        <nav className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans flex flex-col justify-between">
+        {/* macOS Top App Bar */}
+        <nav className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl sticky top-0 z-30 shadow-2xs">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center">
-                <BankIcon size={18} />
-              </div>
-              <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight">
+              <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]/50 inline-block"></span>
+              <span className="ml-3 font-semibold text-slate-900 text-xs sm:text-sm tracking-tight">
                 {t("app_title")}
               </span>
             </div>
@@ -263,71 +263,71 @@ export default function DashboardPage() {
           </div>
         </nav>
 
-        {/* Hero Auth Gateway */}
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 flex flex-col items-center justify-center text-center space-y-8">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-              <ShieldCheckIcon size={14} className="text-emerald-700" />
-              <span>Branch Queue & Service Management Portal</span>
+        {/* Hero macOS Card */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 flex flex-col items-center justify-center text-center space-y-8">
+          <div className="space-y-3 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-white/80 text-slate-700 border border-slate-300/80 shadow-2xs backdrop-blur-md">
+              <ShieldCheckIcon size={13} className="text-emerald-700" />
+              <span>Core Banking Branch Queue Management</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               {t("auth_gate_title")}
             </h1>
 
-            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+            <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
               {t("auth_gate_subtitle")}
             </p>
           </div>
 
-          {/* Primary Action Buttons: Sign In / Create Account */}
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm space-y-3.5">
+          {/* Action Window Card */}
+          <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl p-6 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.06)] space-y-3.5">
             <Link
               href="/login"
-              className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-semibold text-sm transition shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black active:to-slate-900 text-white font-medium text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer border border-slate-900/50"
             >
               <span>{t("gate_signin_btn")}</span>
             </Link>
 
             <div className="relative flex items-center justify-center py-1">
-              <div className="border-t border-slate-200 w-full"></div>
-              <span className="bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <div className="border-t border-slate-200/80 w-full"></div>
+              <span className="bg-white/90 px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                 {t("gate_or")}
               </span>
-              <div className="border-t border-slate-200 w-full"></div>
+              <div className="border-t border-slate-200/80 w-full"></div>
             </div>
 
             <Link
               href="/register"
-              className="w-full py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm border border-slate-300 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 text-slate-800 font-medium text-xs border border-slate-300/80 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
             >
               <span>{t("gate_register_btn")}</span>
             </Link>
           </div>
 
-          {/* 8 Services Overview Grid */}
-          <div className="w-full pt-8 border-t border-slate-200 space-y-4 text-left">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
-              Branch Service Offerings
+          {/* Services Quick View */}
+          <div className="w-full pt-6 border-t border-slate-200/80 space-y-3.5 text-left">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 text-center">
+              Branch Service Categories
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {SERVICE_OPTIONS.map((srv) => {
                 const meta = SERVICE_CATEGORY_MAP[srv];
                 const keys = SERVICE_KEYS[srv];
                 return (
                   <div
                     key={srv}
-                    className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs text-xs flex items-start gap-2.5 hover:border-slate-300 transition"
+                    className="p-3 rounded-xl bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-2xs text-xs flex items-start gap-2.5 hover:bg-white transition"
                   >
-                    <div className="w-7 h-7 rounded bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
-                      {renderServiceIcon(meta.iconId, 16)}
+                    <div className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                      {renderServiceIcon(meta.iconId, 14)}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-slate-900 truncate">
+                      <div className="font-semibold text-slate-900 truncate text-[11px]">
                         {t(keys.nameKey)}
                       </div>
-                      <div className="text-[10px] text-slate-500 font-mono">
+                      <div className="text-[10px] text-slate-400 font-mono">
                         {meta.label}
                       </div>
                     </div>
@@ -338,40 +338,44 @@ export default function DashboardPage() {
           </div>
         </main>
 
-        <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-500 bg-white">
-          Branch Operations Core • Enterprise Banking Management System
+        <footer className="border-t border-slate-200/80 py-3 text-center text-[11px] text-slate-400 bg-white/50 backdrop-blur-md">
+          macOS Styled Core Banking Client • Operating System Operations Suite
         </footer>
       </div>
     );
   }
 
-  // If user IS logged in, render corporate dashboard
+  // If user IS logged in, render sleek macOS App Dashboard
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
-      {/* Top Navbar */}
-      <nav className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans pb-16">
+      {/* macOS Top Unified Toolbar */}
+      <nav className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl sticky top-0 z-30 shadow-2xs">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center">
-              <BankIcon size={18} />
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 inline-block"></span>
+              <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]/50 inline-block"></span>
             </div>
-            <div>
-              <span className="font-bold text-slate-900 text-sm sm:text-base">
+
+            <div className="h-4 w-[1px] bg-slate-300/80 mx-1"></div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-900 text-xs sm:text-sm">
                 {user.bankName}
               </span>
-              <span className="ml-2 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                 {user.bankCode}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Language Switcher */}
+          <div className="flex items-center gap-2.5">
             <LanguageSwitcher />
 
             <button
               onClick={handleLogout}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition cursor-pointer"
+              className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-700 border border-slate-300/80 hover:bg-slate-200/90 transition cursor-pointer"
             >
               {t("sign_out")}
             </button>
@@ -379,23 +383,23 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
         {/* Notice Banner */}
         {alertNotice && (
           <div
-            className={`p-3.5 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-between ${
+            className={`p-3.5 rounded-xl text-xs font-medium flex items-center justify-between shadow-2xs backdrop-blur-md ${
               alertNotice.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
-                : "bg-rose-50 text-rose-800 border border-rose-300"
+                ? "bg-emerald-50/90 text-emerald-900 border border-emerald-200"
+                : "bg-rose-50/90 text-rose-900 border border-rose-200"
             }`}
           >
             <div className="flex items-center gap-2">
-              <CheckIcon size={16} className="shrink-0" />
+              <CheckIcon size={14} className="shrink-0" />
               <span>{alertNotice.text}</span>
             </div>
             <button
               onClick={() => setAlertNotice(null)}
-              className="text-xs opacity-70 hover:opacity-100 cursor-pointer font-bold"
+              className="opacity-70 hover:opacity-100 cursor-pointer font-bold"
             >
               ✕
             </button>
@@ -403,24 +407,29 @@ export default function DashboardPage() {
         )}
 
         {/* Customer Header & Account Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Profile Details */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-              {t("verified_account")}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Profile Details Window */}
+          <div className="lg:col-span-7 bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                {t("verified_account")}
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">ID: {user.id ? user.id.slice(-6).toUpperCase() : "ACTIVE"}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              {t("welcome_back")}, {user.fullName}
-            </h1>
-            <p className="text-slate-600 text-xs sm:text-sm max-w-xl">
-              {t("dashboard_subtitle")}
-            </p>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                {t("welcome_back")}, {user.fullName}
+              </h1>
+              <p className="text-slate-500 text-xs mt-0.5">
+                {t("dashboard_subtitle")}
+              </p>
+            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-              <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-2xs">
-                <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+                <div className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">
                   {t("phone_status")}
                 </div>
                 <div className="text-xs font-semibold text-emerald-800 mt-1 flex items-center gap-1">
@@ -429,8 +438,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-2xs">
-                <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+                <div className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">
                   {t("branch_code")}
                 </div>
                 <div className="text-xs font-bold text-slate-900 font-mono mt-1">
@@ -438,8 +447,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-lg p-3.5 col-span-2 sm:col-span-1 shadow-2xs">
-                <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 col-span-2 sm:col-span-1 shadow-2xs">
+                <div className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">
                   {t("permanent_address")}
                 </div>
                 <div className="text-xs font-medium text-slate-700 mt-1 truncate">
@@ -449,9 +458,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Institutional Account Card */}
+          {/* Sleek macOS Dark Card Panel */}
           <div className="lg:col-span-5">
-            <div className="rounded-xl bg-slate-900 text-white border border-slate-800 p-5 shadow-md space-y-5">
+            <div className="rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 text-white border border-slate-800 p-5 shadow-xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
                   <BankIcon size={16} className="text-emerald-400" />
@@ -459,7 +468,7 @@ export default function DashboardPage() {
                     {user.bankName}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800/90 text-emerald-400 border border-slate-700">
                   {t("status_active")}
                 </span>
               </div>
@@ -474,7 +483,7 @@ export default function DashboardPage() {
                   </span>
                   <button
                     onClick={handleCopyAccount}
-                    className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-0.5 rounded border border-slate-700 transition cursor-pointer"
+                    className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-0.5 rounded-md border border-slate-700 transition cursor-pointer"
                   >
                     {copied ? t("copied") : t("copy")}
                   </button>
@@ -486,7 +495,7 @@ export default function DashboardPage() {
                   <div className="text-[9px] uppercase tracking-widest text-slate-400">
                     {t("account_holder")}
                   </div>
-                  <div className="font-semibold text-slate-200 mt-0.5">
+                  <div className="font-medium text-slate-200 mt-0.5 text-xs">
                     {user.fullName}
                   </div>
                 </div>
@@ -494,7 +503,7 @@ export default function DashboardPage() {
                   <div className="text-[9px] uppercase tracking-widest text-slate-400">
                     {t("registered_phone")}
                   </div>
-                  <div className="font-mono text-slate-300 mt-0.5">
+                  <div className="font-mono text-slate-300 mt-0.5 text-xs">
                     {user.phone}
                   </div>
                 </div>
@@ -505,22 +514,22 @@ export default function DashboardPage() {
 
         {/* Live Active Token Queue Card */}
         {activeToken && (
-          <div className="rounded-xl bg-white border border-slate-300 p-6 shadow-sm space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div className="rounded-2xl bg-white/90 backdrop-blur-xl border border-slate-300/80 p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center">
-                  <TicketIcon size={20} />
+                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center">
+                  <TicketIcon size={18} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
                       {t("live_queue_token")}
                     </span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase">
                       {activeToken.status}
                     </span>
                   </div>
-                  <h2 className="text-lg font-bold text-slate-900 mt-0.5">
+                  <h2 className="text-base font-bold text-slate-900 mt-0.5">
                     {t(SERVICE_KEYS[activeToken.serviceType]?.nameKey || "srv_cash")}
                   </h2>
                 </div>
@@ -528,66 +537,66 @@ export default function DashboardPage() {
 
               <button
                 onClick={() => handleCancelToken(activeToken._id)}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 hover:border-rose-200 transition cursor-pointer self-start sm:self-center"
+                className="px-3 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded-lg text-xs font-medium border border-slate-300 hover:border-rose-200 transition cursor-pointer self-start sm:self-center"
               >
                 {t("cancel_ticket")}
               </button>
             </div>
 
             {/* Token Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
-                <div className="text-[10px] uppercase font-bold text-slate-500">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] uppercase font-semibold text-slate-400">
                   {t("your_token_number")}
                 </div>
-                <div className="text-2xl font-bold font-mono text-emerald-800 mt-1">
+                <div className="text-xl font-bold font-mono text-slate-900 mt-1">
                   {activeToken.tokenNumber}
                 </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
-                <div className="text-[10px] uppercase font-bold text-slate-500">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] uppercase font-semibold text-slate-400">
                   {t("designated_counter")}
                 </div>
                 <div className="text-xs font-bold text-slate-900 mt-1">
                   {activeToken.categoryLabel}
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                   {activeToken.assignedCategory}
                 </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
-                <div className="text-[10px] uppercase font-bold text-slate-500">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] uppercase font-semibold text-slate-400">
                   {t("queue_position")}
                 </div>
-                <div className="text-2xl font-bold text-slate-900 mt-1">
+                <div className="text-xl font-bold text-slate-900 mt-1">
                   #{activeToken.queuePosition}
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-400 mt-0.5">
                   {t("ahead_in_line")}
                 </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
-                <div className="text-[10px] uppercase font-bold text-slate-500">
+              <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] uppercase font-semibold text-slate-400">
                   {t("estimated_wait_time")}
                 </div>
-                <div className="text-2xl font-bold text-slate-900 mt-1">
-                  ~{activeToken.estimatedWaitMinutes} <span className="text-xs font-normal text-slate-500">{t("mins")}</span>
+                <div className="text-xl font-bold text-slate-900 mt-1">
+                  ~{activeToken.estimatedWaitMinutes} <span className="text-xs font-normal text-slate-400">{t("mins")}</span>
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-400 mt-0.5">
                   {t("based_on_live_load")}
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-600">
-              <span>
+            <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-600">
+              <span className="text-[11px]">
                 {t("ticket_waiting_notice")}{" "}
-                <strong className="text-emerald-800 font-mono text-sm">{activeToken.tokenNumber}</strong>.
+                <strong className="text-slate-900 font-mono">{activeToken.tokenNumber}</strong>.
               </span>
-              <span className="text-[10px] text-slate-500 font-mono">
+              <span className="text-[10px] text-slate-400 font-mono">
                 {t("issued")}: {new Date(activeToken.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
@@ -595,13 +604,10 @@ export default function DashboardPage() {
         )}
 
         {/* Section B: Service Type Selection Interface */}
-        <section className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-2xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <section className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 mb-1">
-                <span>•</span> {t("select_purpose")}
-              </div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
                 {t("service_section_title")}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -610,14 +616,14 @@ export default function DashboardPage() {
             </div>
 
             {activeToken && (
-              <div className="text-xs bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-lg self-start sm:self-center font-medium">
-                Active Ticket: <strong className="font-mono text-slate-900">{activeToken.tokenNumber}</strong>
+              <div className="text-[11px] bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1 rounded-full self-start sm:self-center font-medium">
+                Active: <strong className="font-mono text-slate-900">{activeToken.tokenNumber}</strong>
               </div>
             )}
           </div>
 
           {/* 8 Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {SERVICE_OPTIONS.map((serviceName) => {
               const meta = SERVICE_CATEGORY_MAP[serviceName];
               const keys = SERVICE_KEYS[serviceName];
@@ -627,53 +633,56 @@ export default function DashboardPage() {
                 <div
                   key={serviceName}
                   onClick={() => setSelectedService(serviceName)}
-                  className={`rounded-lg p-4 border transition-all cursor-pointer flex flex-col justify-between space-y-3.5 ${
+                  className={`rounded-xl p-3.5 border transition-all duration-150 cursor-pointer flex flex-col justify-between space-y-3 ${
                     isSelected
-                      ? "bg-emerald-50/50 border-emerald-600 ring-1 ring-emerald-600"
-                      : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-blue-500/30"
+                      : "bg-slate-50/70 border-slate-200/80 hover:bg-white hover:border-slate-300 hover:shadow-2xs text-slate-900"
                   }`}
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <div className="w-8 h-8 rounded bg-slate-100 text-slate-700 flex items-center justify-center">
-                        {renderServiceIcon(meta.iconId, 18)}
+                      <div
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                          isSelected
+                            ? "bg-slate-800 text-white"
+                            : "bg-white border border-slate-200 text-slate-700"
+                        }`}
+                      >
+                        {renderServiceIcon(meta.iconId, 15)}
                       </div>
-                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                      <span
+                        className={`text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full ${
+                          isSelected
+                            ? "bg-slate-800 text-slate-300 border border-slate-700"
+                            : "bg-white text-slate-600 border border-slate-200"
+                        }`}
+                      >
                         {meta.prefix} • ~{meta.avgMinutes} {t("mins")}
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-slate-900 text-sm pt-1">
+                    <h3 className="font-bold text-xs pt-1 truncate">
                       {t(keys.nameKey)}
                     </h3>
 
-                    <p className="text-xs text-slate-600 leading-relaxed">
+                    <p
+                      className={`text-[11px] leading-relaxed line-clamp-2 ${
+                        isSelected ? "text-slate-300" : "text-slate-500"
+                      }`}
+                    >
                       {t(keys.descKey)}
                     </p>
                   </div>
 
-                  <div className="space-y-2.5 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">{t("target_counter")}:</span>
-                      <span className="font-semibold text-slate-800">
-                        {meta.label}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedService(serviceName);
-                      }}
-                      className={`w-full py-1.5 px-3 rounded text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                        isSelected
-                          ? "bg-emerald-700 text-white"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300"
-                      }`}
-                    >
-                      {isSelected ? t("selected") : t("select_service")}
-                    </button>
+                  <div
+                    className={`pt-2 border-t text-[10px] flex items-center justify-between ${
+                      isSelected ? "border-slate-800 text-slate-400" : "border-slate-200/80 text-slate-500"
+                    }`}
+                  >
+                    <span>{meta.label}</span>
+                    <span className="font-semibold text-[10px]">
+                      {isSelected ? "✓ Selected" : "Select →"}
+                    </span>
                   </div>
                 </div>
               );
@@ -682,17 +691,17 @@ export default function DashboardPage() {
 
           {/* Token Generation Drawer */}
           {selectedService && (
-            <div className="bg-slate-50 border border-slate-300 rounded-lg p-5 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+            <div className="bg-slate-50/90 border border-slate-300 rounded-xl p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center">
-                    {renderServiceIcon(SERVICE_CATEGORY_MAP[selectedService].iconId, 18)}
+                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center">
+                    {renderServiceIcon(SERVICE_CATEGORY_MAP[selectedService].iconId, 15)}
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">
+                    <h3 className="font-bold text-slate-900 text-xs sm:text-sm">
                       {t("confirm_token_for")}: {t(SERVICE_KEYS[selectedService]?.nameKey || "")}
                     </h3>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-[11px] text-slate-500">
                       {t("assigned_to")}{" "}
                       <strong className="text-slate-800">
                         {SERVICE_CATEGORY_MAP[selectedService].label}
@@ -709,9 +718,9 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleRequestToken} className="space-y-4">
+              <form onSubmit={handleRequestToken} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
                     {t("additional_notes")}
                   </label>
                   <input
@@ -719,22 +728,22 @@ export default function DashboardPage() {
                     placeholder={t("notes_placeholder")}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:border-emerald-600 shadow-2xs"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-inner"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-2">
+                <div className="flex items-center justify-end gap-2.5 pt-1">
                   <button
                     type="button"
                     onClick={() => setSelectedService(null)}
-                    className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition cursor-pointer shadow-2xs"
+                    className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-medium transition cursor-pointer shadow-2xs"
                   >
                     {t("cancel")}
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingToken}
-                    className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                    className="px-4 py-1.5 bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black text-white rounded-xl text-xs font-medium shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 border border-slate-900/50"
                   >
                     {isSubmittingToken
                       ? t("generating_token")
