@@ -111,6 +111,7 @@ const BankBranchSchema: Schema<IBankBranch> = new Schema(
       type: String,
       enum: ["active", "maintenance", "closed"],
       default: "active",
+      index: true,
     },
   },
   {
@@ -132,8 +133,10 @@ BankBranchSchema.virtual("totalStaff").get(function (this: IBankBranch) {
   );
 });
 
-// Create index on bankCode for fast lookups
+// Scalability Indexes
 BankBranchSchema.index({ bankCode: 1 }, { unique: true });
+BankBranchSchema.index({ bankName: 1, bankLocation: 1 });
+BankBranchSchema.index({ status: 1, createdAt: -1 });
 
 const BankBranch: Model<IBankBranch> =
   mongoose.models.BankBranch ||

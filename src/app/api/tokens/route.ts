@@ -22,34 +22,56 @@ export async function GET(req: NextRequest) {
     }
 
     const cleanAccNumber = accountNumber.trim().toUpperCase();
+    const cleanBankCode = bankCode ? bankCode.trim().toUpperCase() : null;
 
-    // Find latest active token for this user
-    const activeToken = await ServiceToken.findOne({
-      accountNumber: cleanAccNumber,
-      status: { $in: ["waiting", "called", "in_service"] },
-    }).sort({ createdAt: -1 });
+    // Parallel execution for user token & queue statistics
+    const [activeToken, queueAggregate] = await Promise.all([
+      // 1. Find latest active token with .lean() for minimal memory overhead
+      ServiceToken.findOne({
+        accountNumber: cleanAccNumber,
+        status: { $in: ["waiting", "called", "in_service"] },
+      })
+        .sort({ createdAt: -1 })
+        .lean(),
 
-    // Calculate queue statistics for branch
-    let queueStats = {
+      // 2. High-performance MongoDB Aggregation pipeline for branch queue stats
+      cleanBankCode
+        ? ServiceToken.aggregate([
+            {
+              $match: {
+                bankCode: cleanBankCode,
+                status: "waiting",
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  category: "$assignedCategory",
+                  employeeId: "$assignedEmployeeId",
+                },
+                count: { $sum: 1 },
+              },
+            },
+          ])
+        : Promise.resolve([]),
+    ]);
+
+    // Build structured stats from indexed aggregation
+    const queueStats = {
       totalWaiting: 0,
       byCategory: {} as Record<string, number>,
       byEmployee: {} as Record<string, number>,
     };
 
-    if (bankCode) {
-      const waitingTokens = await ServiceToken.find({
-        bankCode: bankCode.trim().toUpperCase(),
-        status: "waiting",
-      });
+    if (queueAggregate && queueAggregate.length > 0) {
+      queueAggregate.forEach((item) => {
+        const cat = item._id?.category;
+        const emp = item._id?.employeeId;
+        const count = item.count || 0;
 
-      queueStats.totalWaiting = waitingTokens.length;
-      waitingTokens.forEach((t) => {
-        queueStats.byCategory[t.assignedCategory] =
-          (queueStats.byCategory[t.assignedCategory] || 0) + 1;
-        if (t.assignedEmployeeId) {
-          queueStats.byEmployee[t.assignedEmployeeId] =
-            (queueStats.byEmployee[t.assignedEmployeeId] || 0) + 1;
-        }
+        queueStats.totalWaiting += count;
+        if (cat) queueStats.byCategory[cat] = (queueStats.byCategory[cat] || 0) + count;
+        if (emp) queueStats.byEmployee[emp] = (queueStats.byEmployee[emp] || 0) + count;
       });
     }
 
@@ -86,8 +108,11 @@ export async function POST(req: NextRequest) {
 
     const cleanAccNumber = accountNumber.trim().toUpperCase();
 
-    // Verify user exists
-    const user = await User.findOne({ accountNumber: cleanAccNumber });
+    // 1. Fetch user profile with field selection
+    const user = await User.findOne({ accountNumber: cleanAccNumber })
+      .select("accountNumber fullName phone bankId bankCode bankName")
+      .lean();
+
     if (!user) {
       return NextResponse.json(
         { success: false, error: "User account not found" },
@@ -95,11 +120,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already has an active token
-    const existingActive = await ServiceToken.findOne({
-      accountNumber: cleanAccNumber,
-      status: { $in: ["waiting", "called", "in_service"] },
-    });
+    const meta = SERVICE_CATEGORY_MAP[serviceType as BankingServiceType];
+    if (!meta) {
+      return NextResponse.json(
+        { success: false, error: `Invalid service type "${serviceType}"` },
+        { status: 400 }
+      );
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 2. Scalability: Parallelize all prerequisite DB queries into a single round-trip
+    const [existingActive, countToday, waitingAhead, branch] = await Promise.all([
+      ServiceToken.findOne({
+        accountNumber: cleanAccNumber,
+        status: { $in: ["waiting", "called", "in_service"] },
+      }).lean(),
+
+      ServiceToken.countDocuments({
+        bankCode: user.bankCode,
+        assignedCategory: meta.category,
+        createdAt: { $gte: today },
+      }),
+
+      ServiceToken.countDocuments({
+        bankCode: user.bankCode,
+        assignedCategory: meta.category,
+        status: "waiting",
+      }),
+
+      BankBranch.findOne({ bankCode: user.bankCode })
+        .select("staffing")
+        .lean(),
+    ]);
 
     if (existingActive) {
       return NextResponse.json(
@@ -112,42 +166,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const meta = SERVICE_CATEGORY_MAP[serviceType as BankingServiceType];
-    if (!meta) {
-      return NextResponse.json(
-        { success: false, error: `Invalid service type "${serviceType}"` },
-        { status: 400 }
-      );
-    }
-
-    // Count today's tokens for this service category to create sequential token ID
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const countToday = await ServiceToken.countDocuments({
-      bankCode: user.bankCode,
-      assignedCategory: meta.category,
-      createdAt: { $gte: today },
-    });
-
     const tokenNumber = `${meta.prefix}-${(countToday + 1)
       .toString()
       .padStart(3, "0")}`;
 
-    // Calculate queue position & wait time
-    const waitingAhead = await ServiceToken.countDocuments({
-      bankCode: user.bankCode,
-      assignedCategory: meta.category,
-      status: "waiting",
-    });
-
-    // Check branch staff created by admin for this bank branch
+    // Determine staffing parameters
     let staffCount = 1;
     let employeePrefix = "EMP";
     let roleTitle = "Officer";
     let deskTitle = "Desk";
 
-    const branch = await BankBranch.findOne({ bankCode: user.bankCode });
     if (branch && branch.staffing) {
       const s = branch.staffing;
       switch (meta.category) {
@@ -184,7 +212,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Map query to specific employee created by admin using load-balanced round-robin
+    // Load-balanced round-robin employee assignment
     const employeeIndex = (countToday % Math.max(1, staffCount)) + 1;
     const assignedEmployeeId = `${employeePrefix}-${employeeIndex
       .toString()

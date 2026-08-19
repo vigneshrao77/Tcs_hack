@@ -34,6 +34,8 @@ const OtpTokenSchema: Schema<IOtpToken> = new Schema(
   }
 );
 
+OtpTokenSchema.index({ phone: 1, verified: 1 });
+
 const OtpToken: Model<IOtpToken> =
   mongoose.models.OtpToken ||
   mongoose.model<IOtpToken>("OtpToken", OtpTokenSchema);

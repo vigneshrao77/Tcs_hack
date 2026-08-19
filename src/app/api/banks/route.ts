@@ -8,6 +8,14 @@ import {
   getClientIp,
 } from "@/lib/security";
 
+// Scalability: In-memory cache for bank branch listing (60-second TTL)
+let branchesCache: { data: unknown[]; count: number; expiresAt: number } | null =
+  null;
+
+export function invalidateBranchesCache() {
+  branchesCache = null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const ip = getClientIp(req);
@@ -19,13 +27,30 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    await connectToDatabase();
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
+    const skip = (page - 1) * limit;
+
+    const hasSearch = search && search.trim().length > 0;
+
+    // Return cached response if default listing and cache is warm
+    const now = Date.now();
+    if (!hasSearch && page === 1 && limit === 50 && branchesCache && branchesCache.expiresAt > now) {
+      return NextResponse.json({
+        success: true,
+        count: branchesCache.count,
+        data: branchesCache.data,
+        cached: true,
+      });
+    }
+
+    await connectToDatabase();
 
     let query = {};
-    if (search && search.trim()) {
-      const sanitizedSearch = escapeRegex(search.trim());
+    if (hasSearch) {
+      const sanitizedSearch = escapeRegex(search!.trim());
       const regex = new RegExp(sanitizedSearch, "i");
       query = {
         $or: [
@@ -37,11 +62,29 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    const branches = await BankBranch.find(query).sort({ createdAt: -1 });
+    const [branches, totalCount] = await Promise.all([
+      BankBranch.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      BankBranch.countDocuments(query),
+    ]);
+
+    // Cache unsearched full catalog for 60 seconds
+    if (!hasSearch && page === 1) {
+      branchesCache = {
+        data: branches,
+        count: totalCount,
+        expiresAt: now + 60 * 1000,
+      };
+    }
 
     return NextResponse.json({
       success: true,
-      count: branches.length,
+      count: totalCount,
+      page,
+      limit,
       data: branches,
     });
   } catch (error: unknown) {
@@ -116,7 +159,7 @@ export async function POST(req: NextRequest) {
     const formattedCode = bankCode.trim().toUpperCase();
 
     // Check for existing bankCode
-    const existing = await BankBranch.findOne({ bankCode: formattedCode });
+    const existing = await BankBranch.findOne({ bankCode: formattedCode }).select("_id").lean();
     if (existing) {
       return NextResponse.json(
         {
@@ -150,6 +193,9 @@ export async function POST(req: NextRequest) {
       staffing: cleanStaffing,
       status: status === "maintenance" || status === "closed" ? status : "active",
     });
+
+    // Invalidate in-memory cache on modification
+    invalidateBranchesCache();
 
     return NextResponse.json(
       {

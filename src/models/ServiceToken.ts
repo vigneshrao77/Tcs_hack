@@ -135,6 +135,12 @@ const ServiceTokenSchema: Schema<IServiceToken> = new Schema(
   }
 );
 
+// Scalability Compound Indexes for High-Concurrency Lookups
+ServiceTokenSchema.index({ bankCode: 1, assignedCategory: 1, createdAt: -1 });
+ServiceTokenSchema.index({ bankCode: 1, status: 1 });
+ServiceTokenSchema.index({ accountNumber: 1, status: 1, createdAt: -1 });
+ServiceTokenSchema.index({ createdAt: -1 });
+
 const ServiceToken: Model<IServiceToken> =
   mongoose.models.ServiceToken ||
   mongoose.model<IServiceToken>("ServiceToken", ServiceTokenSchema);

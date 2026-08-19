@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import BankBranch from "@/models/BankBranch";
 import { verifyAdminSecret, checkRateLimit, getClientIp } from "@/lib/security";
+import { invalidateBranchesCache } from "../route";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     await connectToDatabase();
     const { id } = await params;
 
-    const branch = await BankBranch.findById(id);
+    const branch = await BankBranch.findById(id).lean();
     if (!branch) {
       return NextResponse.json(
         { success: false, error: "Bank branch not found" },
@@ -76,7 +77,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       const existing = await BankBranch.findOne({
         bankCode: formattedCode,
         _id: { $ne: id },
-      });
+      }).select("_id").lean();
+
       if (existing) {
         return NextResponse.json(
           {
@@ -109,7 +111,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     const updatedBranch = await BankBranch.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
-    });
+    }).lean();
 
     if (!updatedBranch) {
       return NextResponse.json(
@@ -117,6 +119,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         { status: 404 }
       );
     }
+
+    invalidateBranchesCache();
 
     return NextResponse.json({
       success: true,
@@ -157,13 +161,15 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const deleted = await BankBranch.findByIdAndDelete(id);
+    const deleted = await BankBranch.findByIdAndDelete(id).lean();
     if (!deleted) {
       return NextResponse.json(
         { success: false, error: "Bank branch not found" },
         { status: 404 }
       );
     }
+
+    invalidateBranchesCache();
 
     return NextResponse.json({
       success: true,
