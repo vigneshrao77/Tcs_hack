@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: `Twilio Error: ${errorMessage}`,
+        error: `SMS Service: ${errorMessage}`,
       },
       { status: 500 }
     );

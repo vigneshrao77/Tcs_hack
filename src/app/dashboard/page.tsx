@@ -9,6 +9,20 @@ import {
 } from "@/types/serviceTypes";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import {
+  BankIcon,
+  CashIcon,
+  AccountIcon,
+  LoanIcon,
+  KycIcon,
+  ChequeIcon,
+  AddressIcon,
+  CardIcon,
+  TicketIcon,
+  ShieldCheckIcon,
+  UserIcon,
+  CheckIcon,
+} from "@/components/BankIcons";
 
 interface CustomerUser {
   id: string;
@@ -56,6 +70,27 @@ const SERVICE_OPTIONS: BankingServiceType[] = [
   "Address change",
   "Card services",
 ];
+
+const renderServiceIcon = (iconId: string, size = 20) => {
+  switch (iconId) {
+    case "cash":
+      return <CashIcon size={size} />;
+    case "account":
+      return <AccountIcon size={size} />;
+    case "loan":
+      return <LoanIcon size={size} />;
+    case "kyc":
+      return <KycIcon size={size} />;
+    case "cheque":
+      return <ChequeIcon size={size} />;
+    case "address":
+      return <AddressIcon size={size} />;
+    case "card":
+      return <CardIcon size={size} />;
+    default:
+      return <TicketIcon size={size} />;
+  }
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -155,18 +190,18 @@ export default function DashboardPage() {
         setNotes("");
         setAlertNotice({
           type: "success",
-          text: `Token ${data.data.tokenNumber} generated! You are #${data.data.queuePosition} in line.`,
+          text: `Queue Ticket ${data.data.tokenNumber} issued. Position: #${data.data.queuePosition} in line.`,
         });
       } else {
         setAlertNotice({
           type: "error",
-          text: data.error || "Failed to generate token",
+          text: data.error || "Failed to generate token ticket",
         });
       }
     } catch (err: unknown) {
       setAlertNotice({
         type: "error",
-        text: err instanceof Error ? err.message : "Network error generating token",
+        text: err instanceof Error ? err.message : "Network error generating ticket",
       });
     } finally {
       setIsSubmittingToken(false);
@@ -174,7 +209,7 @@ export default function DashboardPage() {
   };
 
   const handleCancelToken = async (tokenId: string) => {
-    if (!confirm("Are you sure you want to cancel your queue ticket?")) return;
+    if (!confirm("Are you sure you want to cancel this queue ticket?")) return;
 
     try {
       const res = await fetch(`/api/tokens/${tokenId}`, { method: "DELETE" });
@@ -183,10 +218,10 @@ export default function DashboardPage() {
         setActiveToken(null);
         setAlertNotice({
           type: "success",
-          text: "Queue token has been cancelled.",
+          text: "Queue token ticket has been cancelled.",
         });
       } else {
-        alert(data.error || "Failed to cancel token");
+        alert(data.error || "Failed to cancel ticket");
       }
     } catch (err) {
       console.error("Cancel failed:", err);
@@ -206,16 +241,18 @@ export default function DashboardPage() {
     );
   }
 
-  // If user is NOT logged in, show the Landing Gateway asking to Sign In or Create Account
+  // If user is NOT logged in, show the clean Institutional Gateway
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900 font-sans flex flex-col justify-between">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between">
         {/* Top Navbar */}
-        <nav className="border-b border-slate-200 bg-white/90 backdrop-blur sticky top-0 z-30 shadow-xs">
+        <nav className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🏦</span>
-              <span className="font-bold text-slate-900 text-sm sm:text-base">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center">
+                <BankIcon size={18} />
+              </div>
+              <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight">
                 {t("app_title")}
               </span>
             </div>
@@ -228,33 +265,33 @@ export default function DashboardPage() {
 
         {/* Hero Auth Gateway */}
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 flex flex-col items-center justify-center text-center space-y-8">
-          <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
-              <span>🎟️</span>
-              Smart Queue & Counter Routing System
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              <ShieldCheckIcon size={14} className="text-emerald-700" />
+              <span>Branch Queue & Service Management Portal</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
               {t("auth_gate_title")}
             </h1>
 
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
               {t("auth_gate_subtitle")}
             </p>
           </div>
 
           {/* Primary Action Buttons: Sign In / Create Account */}
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl space-y-4">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm space-y-3.5">
             <Link
               href="/login"
-              className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-semibold text-sm transition shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{t("gate_signin_btn")}</span>
             </Link>
 
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center py-1">
               <div className="border-t border-slate-200 w-full"></div>
-              <span className="bg-white px-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+              <span className="bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 {t("gate_or")}
               </span>
               <div className="border-t border-slate-200 w-full"></div>
@@ -262,16 +299,16 @@ export default function DashboardPage() {
 
             <Link
               href="/register"
-              className="w-full py-3.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-300 transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              className="w-full py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm border border-slate-300 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
             >
               <span>{t("gate_register_btn")}</span>
             </Link>
           </div>
 
-          {/* 8 Services Preview Banner */}
+          {/* 8 Services Overview Grid */}
           <div className="w-full pt-8 border-t border-slate-200 space-y-4 text-left">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
-              Available Banking Services
+              Branch Service Offerings
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -281,9 +318,11 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={srv}
-                    className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs text-xs flex items-center gap-2.5 hover:border-emerald-300 transition"
+                    className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs text-xs flex items-start gap-2.5 hover:border-slate-300 transition"
                   >
-                    <span className="text-2xl shrink-0">{meta.icon}</span>
+                    <div className="w-7 h-7 rounded bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                      {renderServiceIcon(meta.iconId, 16)}
+                    </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-slate-900 truncate">
                         {t(keys.nameKey)}
@@ -300,37 +339,39 @@ export default function DashboardPage() {
         </main>
 
         <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-500 bg-white">
-          Branch Queue & Customer Management Suite • Powered by Next.js & MongoDB
+          Branch Operations Core • Enterprise Banking Management System
         </footer>
       </div>
     );
   }
 
-  // If user IS logged in, render active dashboard in light theme
+  // If user IS logged in, render corporate dashboard
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
-      {/* Top Navbar with Language Switcher */}
-      <nav className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-30 shadow-xs">
+      {/* Top Navbar */}
+      <nav className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🏦</span>
+            <div className="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center">
+              <BankIcon size={18} />
+            </div>
             <div>
               <span className="font-bold text-slate-900 text-sm sm:text-base">
                 {user.bankName}
               </span>
-              <span className="ml-2 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="ml-2 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                 {user.bankCode}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Language Switcher Widget */}
+            {/* Language Switcher */}
             <LanguageSwitcher />
 
             <button
               onClick={handleLogout}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition cursor-pointer"
             >
               {t("sign_out")}
             </button>
@@ -339,116 +380,122 @@ export default function DashboardPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
-        {/* Global Notice Alert */}
+        {/* Notice Banner */}
         {alertNotice && (
           <div
-            className={`p-4 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-between shadow-md ${
+            className={`p-3.5 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-between ${
               alertNotice.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
                 : "bg-rose-50 text-rose-800 border border-rose-300"
             }`}
           >
             <div className="flex items-center gap-2">
-              <span>{alertNotice.type === "success" ? "✅" : "⚠️"}</span>
+              <CheckIcon size={16} className="shrink-0" />
               <span>{alertNotice.text}</span>
             </div>
             <button
               onClick={() => setAlertNotice(null)}
-              className="text-xs opacity-70 hover:opacity-100 cursor-pointer"
+              className="text-xs opacity-70 hover:opacity-100 cursor-pointer font-bold"
             >
               ✕
             </button>
           </div>
         )}
 
-        {/* Customer Header & Digital Card */}
+        {/* Customer Header & Account Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Welcome & Profile */}
+          {/* Profile Details */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
               {t("verified_account")}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {t("welcome_back")}, {user.fullName}!
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              {t("welcome_back")}, {user.fullName}
             </h1>
             <p className="text-slate-600 text-xs sm:text-sm max-w-xl">
               {t("dashboard_subtitle")}
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-2xs">
                 <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">
                   {t("phone_status")}
                 </div>
-                <div className="text-xs sm:text-sm font-bold text-emerald-700 mt-1">
-                  {t("phone_verified_twilio")}
+                <div className="text-xs font-semibold text-emerald-800 mt-1 flex items-center gap-1">
+                  <CheckIcon size={12} />
+                  <span>{t("phone_verified")}</span>
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-lg p-3.5 shadow-2xs">
                 <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">
                   {t("branch_code")}
                 </div>
-                <div className="text-xs sm:text-sm font-bold text-slate-900 font-mono mt-1">
+                <div className="text-xs font-bold text-slate-900 font-mono mt-1">
                   {user.bankCode}
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 col-span-2 sm:col-span-1 shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-lg p-3.5 col-span-2 sm:col-span-1 shadow-2xs">
                 <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">
                   {t("permanent_address")}
                 </div>
-                <div className="text-xs font-semibold text-slate-800 mt-1 truncate">
-                  📍 {user.permanentAddress}
+                <div className="text-xs font-medium text-slate-700 mt-1 truncate">
+                  {user.permanentAddress}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Digital Debit / Customer ID Card */}
+          {/* Institutional Account Card */}
           <div className="lg:col-span-5">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900 text-white border border-emerald-700/50 p-6 shadow-2xl space-y-6">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold uppercase tracking-widest text-emerald-300">
-                  {user.bankName}
+            <div className="rounded-xl bg-slate-900 text-white border border-slate-800 p-5 shadow-md space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <BankIcon size={16} className="text-emerald-400" />
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">
+                    {user.bankName}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
+                  {t("status_active")}
                 </span>
-                <span className="text-xl">💳</span>
               </div>
 
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-emerald-200/80 font-mono">
+                <div className="text-[10px] uppercase tracking-widest text-slate-400 font-mono">
                   {t("account_number")}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-lg sm:text-xl font-extrabold font-mono tracking-wider text-white">
+                  <span className="text-lg font-bold font-mono tracking-wider text-white">
                     {user.accountNumber}
                   </span>
                   <button
                     onClick={handleCopyAccount}
-                    className="text-xs bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded transition cursor-pointer backdrop-blur"
+                    className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-0.5 rounded border border-slate-700 transition cursor-pointer"
                   >
-                    {copied ? `✓ ${t("copied")}` : `📋 ${t("copy")}`}
+                    {copied ? t("copied") : t("copy")}
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-end justify-between pt-2 border-t border-emerald-700/50">
+              <div className="flex items-end justify-between pt-2 border-t border-slate-800 text-xs">
                 <div>
-                  <div className="text-[9px] uppercase tracking-widest text-emerald-200/80">
+                  <div className="text-[9px] uppercase tracking-widest text-slate-400">
                     {t("account_holder")}
                   </div>
-                  <div className="text-sm font-bold text-white tracking-wide">
+                  <div className="font-semibold text-slate-200 mt-0.5">
                     {user.fullName}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[9px] uppercase tracking-widest text-emerald-200/80">
-                    {t("status_active")}
+                  <div className="text-[9px] uppercase tracking-widest text-slate-400">
+                    {t("registered_phone")}
                   </div>
-                  <div className="text-xs font-bold text-emerald-300">
-                    {t("status_active")}
+                  <div className="font-mono text-slate-300 mt-0.5">
+                    {user.phone}
                   </div>
                 </div>
               </div>
@@ -458,22 +505,22 @@ export default function DashboardPage() {
 
         {/* Live Active Token Queue Card */}
         {activeToken && (
-          <div className="rounded-2xl bg-gradient-to-r from-emerald-50 via-white to-teal-50 border-2 border-emerald-500/50 p-6 sm:p-8 shadow-xl space-y-6 animate-in fade-in duration-200">
+          <div className="rounded-xl bg-white border border-slate-300 p-6 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-2xl animate-pulse">
-                  🎟️
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center">
+                  <TicketIcon size={20} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold">
+                    <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
                       {t("live_queue_token")}
                     </span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 uppercase">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 uppercase">
                       {activeToken.status}
                     </span>
                   </div>
-                  <h2 className="text-xl font-bold text-slate-900 mt-1">
+                  <h2 className="text-lg font-bold text-slate-900 mt-0.5">
                     {t(SERVICE_KEYS[activeToken.serviceType]?.nameKey || "srv_cash")}
                   </h2>
                 </div>
@@ -481,40 +528,40 @@ export default function DashboardPage() {
 
               <button
                 onClick={() => handleCancelToken(activeToken._id)}
-                className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold border border-rose-200 transition cursor-pointer self-start sm:self-center shadow-xs"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 hover:border-rose-200 transition cursor-pointer self-start sm:self-center"
               >
                 {t("cancel_ticket")}
               </button>
             </div>
 
             {/* Token Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
                 <div className="text-[10px] uppercase font-bold text-slate-500">
                   {t("your_token_number")}
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-700 mt-1">
+                <div className="text-2xl font-bold font-mono text-emerald-800 mt-1">
                   {activeToken.tokenNumber}
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
                 <div className="text-[10px] uppercase font-bold text-slate-500">
                   {t("designated_counter")}
                 </div>
-                <div className="text-sm font-bold text-slate-900 mt-1">
+                <div className="text-xs font-bold text-slate-900 mt-1">
                   {activeToken.categoryLabel}
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
                   {activeToken.assignedCategory}
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
                 <div className="text-[10px] uppercase font-bold text-slate-500">
                   {t("queue_position")}
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+                <div className="text-2xl font-bold text-slate-900 mt-1">
                   #{activeToken.queuePosition}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
@@ -522,12 +569,12 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
                 <div className="text-[10px] uppercase font-bold text-slate-500">
                   {t("estimated_wait_time")}
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-indigo-700 mt-1">
-                  ~{activeToken.estimatedWaitMinutes} <span className="text-xs">{t("mins")}</span>
+                <div className="text-2xl font-bold text-slate-900 mt-1">
+                  ~{activeToken.estimatedWaitMinutes} <span className="text-xs font-normal text-slate-500">{t("mins")}</span>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
                   {t("based_on_live_load")}
@@ -535,10 +582,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white/80 rounded-xl p-3.5 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-700 shadow-xs">
-              <span className="flex items-center gap-2">
-                <span>🔔</span> {t("ticket_waiting_notice")}{" "}
-                <strong className="text-emerald-700 font-mono text-sm">{activeToken.tokenNumber}</strong>.
+            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-600">
+              <span>
+                {t("ticket_waiting_notice")}{" "}
+                <strong className="text-emerald-800 font-mono text-sm">{activeToken.tokenNumber}</strong>.
               </span>
               <span className="text-[10px] text-slate-500 font-mono">
                 {t("issued")}: {new Date(activeToken.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -548,23 +595,23 @@ export default function DashboardPage() {
         )}
 
         {/* Section B: Service Type Selection Interface */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        <section className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-2xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 mb-1">
-                <span>📍</span> {t("select_purpose")}
+              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 mb-1">
+                <span>•</span> {t("select_purpose")}
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
                 {t("service_section_title")}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {t("service_section_subtitle")}
               </p>
             </div>
 
             {activeToken && (
-              <div className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 self-start sm:self-center font-medium shadow-xs">
-                <span>⚠️</span> Active Token: {activeToken.tokenNumber}
+              <div className="text-xs bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-lg self-start sm:self-center font-medium">
+                Active Ticket: <strong className="font-mono text-slate-900">{activeToken.tokenNumber}</strong>
               </div>
             )}
           </div>
@@ -580,16 +627,18 @@ export default function DashboardPage() {
                 <div
                   key={serviceName}
                   onClick={() => setSelectedService(serviceName)}
-                  className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between space-y-4 ${
+                  className={`rounded-lg p-4 border transition-all cursor-pointer flex flex-col justify-between space-y-3.5 ${
                     isSelected
-                      ? "bg-emerald-50/70 border-emerald-500 shadow-md ring-1 ring-emerald-500"
-                      : "bg-slate-50/70 border-slate-200 hover:border-emerald-400 hover:bg-white hover:shadow-md"
+                      ? "bg-emerald-50/50 border-emerald-600 ring-1 ring-emerald-600"
+                      : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs"
                   }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-3xl">{meta.icon}</span>
-                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200 shadow-2xs">
+                      <div className="w-8 h-8 rounded bg-slate-100 text-slate-700 flex items-center justify-center">
+                        {renderServiceIcon(meta.iconId, 18)}
+                      </div>
+                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                         {meta.prefix} • ~{meta.avgMinutes} {t("mins")}
                       </span>
                     </div>
@@ -603,20 +652,13 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  <div className="space-y-3 pt-2 border-t border-slate-200">
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-slate-500">{t("target_counter")}:</span>
-                      <span className="font-semibold text-emerald-700">
+                      <span className="font-semibold text-slate-800">
                         {meta.label}
                       </span>
                     </div>
-
-                    {meta.digitalAlternative && (
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2 text-[10px] text-indigo-900 flex items-start gap-1.5">
-                        <span className="shrink-0 mt-0.5">💡</span>
-                        <span>{meta.digitalAlternative}</span>
-                      </div>
-                    )}
 
                     <button
                       type="button"
@@ -624,10 +666,10 @@ export default function DashboardPage() {
                         e.stopPropagation();
                         setSelectedService(serviceName);
                       }}
-                      className={`w-full py-2 px-3 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                      className={`w-full py-1.5 px-3 rounded text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
                         isSelected
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : "bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 shadow-xs"
+                          ? "bg-emerald-700 text-white"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300"
                       }`}
                     >
                       {isSelected ? t("selected") : t("select_service")}
@@ -638,21 +680,21 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Token Generation Drawer / Confirmation */}
+          {/* Token Generation Drawer */}
           {selectedService && (
-            <div className="bg-slate-50 border-2 border-emerald-500/40 rounded-xl p-6 shadow-lg space-y-4 animate-in fade-in duration-150">
+            <div className="bg-slate-50 border border-slate-300 rounded-lg p-5 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">
-                    {SERVICE_CATEGORY_MAP[selectedService].icon}
-                  </span>
+                  <div className="w-8 h-8 rounded bg-emerald-700 text-white flex items-center justify-center">
+                    {renderServiceIcon(SERVICE_CATEGORY_MAP[selectedService].iconId, 18)}
+                  </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base">
+                    <h3 className="font-bold text-slate-900 text-sm">
                       {t("confirm_token_for")}: {t(SERVICE_KEYS[selectedService]?.nameKey || "")}
                     </h3>
                     <p className="text-xs text-slate-600">
                       {t("assigned_to")}{" "}
-                      <strong className="text-emerald-700">
+                      <strong className="text-slate-800">
                         {SERVICE_CATEGORY_MAP[selectedService].label}
                       </strong>
                     </p>
@@ -677,7 +719,7 @@ export default function DashboardPage() {
                     placeholder={t("notes_placeholder")}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:border-emerald-600 shadow-xs"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:border-emerald-600 shadow-2xs"
                   />
                 </div>
 
@@ -685,14 +727,14 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedService(null)}
-                    className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition cursor-pointer shadow-xs"
+                    className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition cursor-pointer shadow-2xs"
                   >
                     {t("cancel")}
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingToken}
-                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-sm transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                    className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                   >
                     {isSubmittingToken
                       ? t("generating_token")

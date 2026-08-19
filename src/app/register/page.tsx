@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { BankIcon, CheckIcon, RefreshIcon, PhoneIcon, LockIcon } from "@/components/BankIcons";
 
 interface BankBranch {
   _id: string;
@@ -79,10 +80,10 @@ export default function RegisterPage() {
     setAccountNumber(`${formattedPrefix}-${randomDigits}`);
   };
 
-  // Send Twilio OTP
+  // Send SMS Verification OTP
   const handleSendOtp = async () => {
     if (!phone || phone.trim().length < 8) {
-      setErrorAlert("Please enter a valid phone number with country code (e.g. +91 9876543210 or +1 555...)");
+      setErrorAlert("Please enter a valid mobile number with country code (e.g., +91 9876543210 or +1 555...)");
       return;
     }
 
@@ -100,13 +101,13 @@ export default function RegisterPage() {
 
       if (res.ok && data.success) {
         setIsOtpSent(true);
-        setOtpSuccessNotice(data.message || `Verification code sent via SMS to ${phone}`);
+        setOtpSuccessNotice(data.message || `Verification code dispatched via SMS to ${phone}`);
       } else {
-        setErrorAlert(data.error || "Failed to send verification code via Twilio");
+        setErrorAlert(data.error || "Failed to dispatch SMS verification code");
       }
     } catch (err: unknown) {
       setErrorAlert(
-        err instanceof Error ? err.message : "Network error sending OTP"
+        err instanceof Error ? err.message : "Network communication error"
       );
     } finally {
       setIsSendingOtp(false);
@@ -116,7 +117,7 @@ export default function RegisterPage() {
   // Verify OTP
   const handleVerifyOtp = async () => {
     if (!otpCode || otpCode.trim().length < 4) {
-      setErrorAlert("Please enter the 6-digit OTP code received on your phone.");
+      setErrorAlert("Please enter the 6-digit verification code received on your phone.");
       return;
     }
 
@@ -133,9 +134,9 @@ export default function RegisterPage() {
 
       if (res.ok && data.success) {
         setIsOtpVerified(true);
-        setOtpSuccessNotice("Phone number verified successfully via SMS code!");
+        setOtpSuccessNotice("Mobile phone number verified successfully.");
       } else {
-        setErrorAlert(data.error || "Invalid OTP code");
+        setErrorAlert(data.error || "Invalid verification code");
       }
     } catch (err: unknown) {
       setErrorAlert(
@@ -153,22 +154,22 @@ export default function RegisterPage() {
     setSuccessAlert(null);
 
     if (!selectedBank) {
-      setErrorAlert("Please select a bank branch or register one in the admin panel.");
+      setErrorAlert("Please select an active branch from the list.");
       return;
     }
 
     if (!isOtpVerified) {
-      setErrorAlert("Please verify your phone number with Twilio OTP before submitting.");
+      setErrorAlert("Please complete mobile phone verification before submitting registration.");
       return;
     }
 
     if (password.length < 6) {
-      setErrorAlert("Password must be at least 6 characters long.");
+      setErrorAlert("Password must contain at least 6 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorAlert("Passwords do not match.");
+      setErrorAlert("Password confirmation does not match.");
       return;
     }
 
@@ -194,17 +195,17 @@ export default function RegisterPage() {
 
       if (res.ok && data.success) {
         setSuccessAlert(
-          `Registration successful! Your Account Number is ${data.data.accountNumber}. Redirecting to login...`
+          `Account created successfully. Account Number: ${data.data.accountNumber}. Redirecting to sign in...`
         );
         setTimeout(() => {
           router.push(`/login?account=${encodeURIComponent(data.data.accountNumber)}`);
-        }, 2000);
+        }, 1500);
       } else {
         setErrorAlert(data.error || "Registration failed");
       }
     } catch (err: unknown) {
       setErrorAlert(
-        err instanceof Error ? err.message : "Network error during registration"
+        err instanceof Error ? err.message : "Network communication error"
       );
     } finally {
       setIsSubmitting(false);
@@ -212,36 +213,36 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       {/* Top Bar with Language Switcher */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
         <LanguageSwitcher />
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-xl">
-        {/* Header Branding */}
+        {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-3xl shadow-sm">
-            🏦
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-emerald-600 text-white shadow-sm mb-1">
+            <BankIcon size={24} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             {t("register_title")}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
             {t("register_subtitle")}
           </p>
         </div>
 
         {/* Card Form */}
-        <div className="mt-8 bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+        <div className="mt-8 bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-8 space-y-6">
           {/* Alerts */}
           {errorAlert && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-between">
-              <span>⚠️ {errorAlert}</span>
+            <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between">
+              <span>{errorAlert}</span>
               <button
                 type="button"
                 onClick={() => setErrorAlert(null)}
-                className="opacity-70 hover:opacity-100 cursor-pointer"
+                className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
               >
                 ✕
               </button>
@@ -249,22 +250,22 @@ export default function RegisterPage() {
           )}
 
           {successAlert && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
-              <span className="animate-bounce">✅</span>
+            <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+              <CheckIcon size={14} className="text-emerald-700 shrink-0" />
               <span>{successAlert}</span>
             </div>
           )}
 
           {otpSuccessNotice && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+            <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span>📱</span>
+                <CheckIcon size={14} className="text-emerald-700 shrink-0" />
                 <span>{otpSuccessNotice}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setOtpSuccessNotice(null)}
-                className="opacity-70 hover:opacity-100 cursor-pointer"
+                className="opacity-70 hover:opacity-100 cursor-pointer font-bold"
               >
                 ✕
               </button>
@@ -272,11 +273,16 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleRegister} className="space-y-6">
-            {/* Step 1: Bank Selection & Account Number */}
+            {/* Step 1: Branch & Account Selection */}
             <div className="space-y-4 border-b border-slate-200 pb-5">
-              <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                {t("step1_title")}
-              </h2>
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center text-[10px] font-bold">
+                  1
+                </span>
+                <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  {t("step1_title")}
+                </h2>
+              </div>
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -286,17 +292,17 @@ export default function RegisterPage() {
                   <div className="text-xs text-slate-500">{t("loading")}</div>
                 ) : branches.length === 0 ? (
                   <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                    <span>No bank branches registered yet. Please contact system administrator.</span>
+                    <span>No bank branches registered in the system.</span>
                   </div>
                 ) : (
                   <select
                     value={selectedBankId}
                     onChange={(e) => handleBankChange(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-2xs"
                   >
                     {branches.map((b) => (
                       <option key={b._id} value={b._id}>
-                        {b.bankName} ({b.bankCode}) - {b.bankLocation}
+                        {b.bankName} ({b.bankCode}) — {b.bankLocation}
                       </option>
                     ))}
                   </select>
@@ -310,10 +316,10 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Alexander Hamilton"
+                  placeholder="e.g., Alexander Hamilton"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-2xs"
                 />
               </div>
 
@@ -328,9 +334,10 @@ export default function RegisterPage() {
                       onClick={() =>
                         generateRandomAccountNumber(selectedBank.bankCode)
                       }
-                      className="text-[11px] text-emerald-700 hover:text-emerald-800 font-medium transition cursor-pointer"
+                      className="text-[11px] text-emerald-700 hover:text-emerald-800 font-medium transition cursor-pointer flex items-center gap-1"
                     >
-                      {t("regenerate")}
+                      <RefreshIcon size={12} />
+                      <span>{t("regenerate")}</span>
                     </button>
                   )}
                 </div>
@@ -338,30 +345,36 @@ export default function RegisterPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. HDFC-84920194"
+                    placeholder="e.g., BNK-84920194"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs sm:text-sm uppercase focus:outline-none focus:border-emerald-600 shadow-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs sm:text-sm uppercase focus:outline-none focus:border-emerald-600 shadow-2xs"
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
                   {t("must_start_with")}{" "}
-                  <strong className="text-emerald-700 font-mono">
-                    {selectedBank ? selectedBank.bankCode : "BANK"}
+                  <strong className="text-slate-800 font-mono">
+                    {selectedBank ? selectedBank.bankCode : "BRANCH"}
                   </strong>
                 </p>
               </div>
             </div>
 
-            {/* Step 2: Phone & Twilio OTP Verification */}
+            {/* Step 2: Mobile Phone Verification */}
             <div className="space-y-4 border-b border-slate-200 pb-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                  {t("step2_title")}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center text-[10px] font-bold">
+                    2
+                  </span>
+                  <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    {t("step2_title")}
+                  </h2>
+                </div>
                 {isOtpVerified && (
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 flex items-center gap-1">
-                    ✓ {t("verified")}
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                    <CheckIcon size={12} />
+                    <span>{t("verified")}</span>
                   </span>
                 )}
               </div>
@@ -375,17 +388,17 @@ export default function RegisterPage() {
                     type="tel"
                     required
                     disabled={isOtpVerified}
-                    placeholder="e.g. +91 9876543210 or +1 555 123 4567"
+                    placeholder="e.g., +91 9876543210 or +1 555 123 4567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 disabled:bg-slate-100 disabled:text-slate-500 shadow-sm"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 disabled:bg-slate-100 disabled:text-slate-500 shadow-2xs"
                   />
                   {!isOtpVerified && (
                     <button
                       type="button"
                       onClick={handleSendOtp}
                       disabled={isSendingOtp || !phone}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-2xs"
                     >
                       {isSendingOtp ? t("loading") : isOtpSent ? t("resend_otp") : t("send_otp")}
                     </button>
@@ -395,12 +408,12 @@ export default function RegisterPage() {
 
               {/* OTP Entry Section */}
               {isOtpSent && !isOtpVerified && (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-emerald-300 space-y-3">
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-emerald-800">
+                    <label className="block text-xs font-semibold text-slate-800">
                       {t("enter_otp_label")}
                     </label>
-                    <span className="text-[11px] text-slate-500">5 {t("mins")}</span>
+                    <span className="text-[11px] text-slate-500">Validity: 5 {t("mins")}</span>
                   </div>
 
                   <div className="flex gap-2">
@@ -410,13 +423,13 @@ export default function RegisterPage() {
                       placeholder="123456"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono tracking-widest text-center text-base focus:outline-none focus:border-emerald-600 shadow-sm"
+                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono tracking-widest text-center text-base focus:outline-none focus:border-emerald-600 shadow-2xs"
                     />
                     <button
                       type="button"
                       onClick={handleVerifyOtp}
                       disabled={isVerifyingOtp || otpCode.length < 4}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50 shadow-sm"
+                      className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50 shadow-2xs"
                     >
                       {isVerifyingOtp ? t("loading") : t("verify_otp_btn")}
                     </button>
@@ -425,11 +438,16 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Step 3: Permanent Address & Password */}
+            {/* Step 3: Permanent Address & Credentials */}
             <div className="space-y-4">
-              <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                {t("step3_title")}
-              </h2>
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 flex items-center justify-center text-[10px] font-bold">
+                  3
+                </span>
+                <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  {t("step3_title")}
+                </h2>
+              </div>
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -438,10 +456,10 @@ export default function RegisterPage() {
                 <textarea
                   rows={2}
                   required
-                  placeholder="e.g. 142 Elm Street, Apt 4B, New York, NY 10001"
+                  placeholder="e.g., 142 Elm Street, Suite 4B, City, State, ZIP"
                   value={permanentAddress}
                   onChange={(e) => setPermanentAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 resize-none shadow-sm"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 resize-none shadow-2xs"
                 />
               </div>
 
@@ -457,7 +475,7 @@ export default function RegisterPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-2xs"
                     />
                   </div>
                 </div>
@@ -473,7 +491,7 @@ export default function RegisterPage() {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-2xs"
                     />
                   </div>
                 </div>
@@ -497,7 +515,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting || !isOtpVerified}
-              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-semibold text-sm transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting
                 ? t("loading")

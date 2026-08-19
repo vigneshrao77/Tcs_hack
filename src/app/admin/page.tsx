@@ -6,14 +6,23 @@ import dynamic from "next/dynamic";
 import { SelectedLocation } from "@/components/LocationPicker";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import {
+  BankIcon,
+  LockIcon,
+  SearchIcon,
+  CashIcon,
+  LoanIcon,
+  KycIcon,
+  UserIcon,
+} from "@/components/BankIcons";
 
 // Dynamic import with SSR disabled to prevent Leaflet window reference errors during SSR
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
   loading: () => (
-    <div className="h-64 rounded-xl bg-slate-100 border border-slate-300 flex flex-col items-center justify-center text-slate-500 space-y-2">
-      <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-xs">Loading OpenStreetMap Component...</p>
+    <div className="h-64 rounded-lg bg-slate-100 border border-slate-300 flex flex-col items-center justify-center text-slate-500 space-y-2">
+      <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-xs">Loading OpenStreetMap Geocoding...</p>
     </div>
   ),
 });
@@ -101,7 +110,7 @@ export default function AdminPage() {
       setSecretError(null);
       setSecretInput("");
     } else {
-      setSecretError("Invalid Admin Secret Code. Access Denied.");
+      setSecretError("Invalid Authorization Code. Access Denied.");
     }
   };
 
@@ -227,8 +236,8 @@ export default function AdminPage() {
         setAlertMessage({
           type: "success",
           text: editingBranchId
-            ? `Branch "${bankName}" updated successfully!`
-            : `Branch "${bankName}" (${bankCode.toUpperCase()}) registered successfully!`,
+            ? `Branch "${bankName}" record updated successfully.`
+            : `Branch "${bankName}" (${bankCode.toUpperCase()}) registered successfully.`,
         });
         resetForm();
         setShowForm(false);
@@ -236,7 +245,7 @@ export default function AdminPage() {
       } else {
         setAlertMessage({
           type: "error",
-          text: data.error || "Failed to process request",
+          text: data.error || "Failed to process branch record",
         });
       }
     } catch (err: unknown) {
@@ -269,7 +278,7 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error("Delete failed", err);
-      alert("Failed to delete branch due to network error");
+      alert("Failed to delete branch due to network communication error");
     }
   };
 
@@ -282,35 +291,35 @@ export default function AdminPage() {
     );
   }
 
-  // If Admin is NOT Unlocked, show Passcode Gate Screen
+  // If Admin is NOT Unlocked, show clean authorization screen
   if (!isAdminUnlocked) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900 font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
           <LanguageSwitcher />
         </div>
 
         <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-3xl shadow-sm animate-pulse">
-              🔒
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-slate-900 text-white shadow-sm mb-1">
+              <LockIcon size={22} />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              Restricted Admin Authorization
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Restricted Operations Console
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500">
-              This area is restricted to authorized personnel. Enter your secret passcode to access bank creation and staff configurations.
+            <p className="text-xs text-slate-500">
+              Administrative authentication required to configure branches and staffing deployments.
             </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl space-y-5">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-sm space-y-5">
             {secretError && (
-              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-between">
-                <span>⚠️ {secretError}</span>
+              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between">
+                <span>{secretError}</span>
                 <button
                   type="button"
                   onClick={() => setSecretError(null)}
-                  className="opacity-70 hover:opacity-100 cursor-pointer"
+                  className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
                 >
                   ✕
                 </button>
@@ -320,17 +329,17 @@ export default function AdminPage() {
             <form onSubmit={handleUnlockAdmin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Admin Secret Code *
+                  Security Passcode *
                 </label>
                 <div className="relative">
                   <input
                     type={showSecret ? "text" : "password"}
                     required
                     autoFocus
-                    placeholder="Enter 9-digit Secret Code"
+                    placeholder="Enter Passcode"
                     value={secretInput}
                     onChange={(e) => setSecretInput(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-sm tracking-widest placeholder-slate-400 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500 shadow-sm"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-sm tracking-widest placeholder-slate-400 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800"
                   />
                   <button
                     type="button"
@@ -340,16 +349,13 @@ export default function AdminPage() {
                     {showSecret ? "Hide" : "Show"}
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Required to register banks or adjust staff allocations
-                </p>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-2xs cursor-pointer"
               >
-                <span>🔓 Unlock Admin Portal</span>
+                Authenticate Console
               </button>
             </form>
 
@@ -401,15 +407,17 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
       {/* Top Navigation */}
-      <nav className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-30 shadow-xs">
+      <nav className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🏦</span>
+            <div className="w-8 h-8 rounded bg-slate-900 text-white flex items-center justify-center">
+              <BankIcon size={18} />
+            </div>
             <div>
-              <span className="text-base font-bold text-slate-900 tracking-wide">
+              <span className="text-base font-bold text-slate-900 tracking-tight">
                 {t("admin_portal")}
               </span>
-              <span className="hidden sm:inline-block ml-2 text-xs text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">
+              <span className="hidden sm:inline-block ml-2 text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-medium">
                 {t("network_setup")}
               </span>
             </div>
@@ -428,16 +436,16 @@ export default function AdminPage() {
                   setShowForm(true);
                 }
               }}
-              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition shadow-2xs cursor-pointer"
             >
-              <span>{showForm ? t("close_form_btn") : t("register_branch_btn")}</span>
+              {showForm ? t("close_form_btn") : t("register_branch_btn")}
             </button>
 
             <button
               onClick={handleLockAdmin}
-              className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-2xs"
+              className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition text-xs font-semibold cursor-pointer"
             >
-              <span>🔒 Lock Console</span>
+              Lock Console
             </button>
           </div>
         </div>
@@ -447,19 +455,16 @@ export default function AdminPage() {
         {/* Global Alert Notification */}
         {alertMessage && (
           <div
-            className={`p-4 rounded-xl text-sm font-medium flex items-center justify-between shadow-md ${
+            className={`p-3.5 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-between ${
               alertMessage.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
                 : "bg-rose-50 text-rose-800 border border-rose-300"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <span>{alertMessage.type === "success" ? "✅" : "⚠️"}</span>
-              <span>{alertMessage.text}</span>
-            </div>
+            <div>{alertMessage.text}</div>
             <button
               onClick={() => setAlertMessage(null)}
-              className="text-xs opacity-70 hover:opacity-100 cursor-pointer"
+              className="text-xs opacity-70 hover:opacity-100 cursor-pointer font-bold"
             >
               ✕
             </button>
@@ -468,62 +473,61 @@ export default function AdminPage() {
 
         {/* Stats Metrics Header */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs">
             <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("total_branches")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-slate-900 mt-1">
               {totalBranchesCount}
             </div>
-            <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-medium">
-              <span>●</span> MongoDB Active
+            <div className="text-[11px] text-emerald-800 mt-1 font-medium">
+              Registered Branches
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs">
             <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("total_staff")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-slate-900 mt-1">
               {totalStaffCount}
             </div>
-            <div className="text-[11px] text-indigo-700 mt-1 font-medium">
+            <div className="text-[11px] text-slate-600 mt-1">
               {t("staff_breakdown")}
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs">
             <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("cash_counters_stat")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-slate-900 mt-1">
               {totalCashCounters}
             </div>
-            <div className="text-[11px] text-amber-700 mt-1 font-medium">
+            <div className="text-[11px] text-slate-600 mt-1">
               {t("cash_label")}
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs">
             <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("kyc_officers_stat")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+            <div className="text-2xl font-bold text-slate-900 mt-1">
               {totalKycStaff}
             </div>
-            <div className="text-[11px] text-cyan-700 mt-1 font-medium">
+            <div className="text-[11px] text-slate-600 mt-1">
               {t("kyc_label")}
             </div>
           </div>
         </div>
 
-        {/* Branch Registration / Edit Form Drawer */}
+        {/* Branch Registration Form Drawer */}
         {showForm && (
-          <div className="bg-white border-2 border-emerald-500/40 rounded-2xl p-6 sm:p-8 shadow-xl animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 mb-6">
+          <div className="bg-white border border-slate-300 rounded-xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <span>🏛️</span>
+                <h2 className="text-lg font-bold text-slate-900">
                   {editingBranchId
                     ? `${t("edit_branch_title")}: ${bankName}`
                     : t("reg_branch_title")}
@@ -531,7 +535,7 @@ export default function AdminPage() {
               </div>
               <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
                 <span className="text-slate-500">{t("assigned_staff")}</span>
-                <span className="font-bold text-emerald-700 text-sm">
+                <span className="font-bold text-slate-900 font-mono">
                   {formTotalStaff} {t("employees_count")}
                 </span>
               </div>
@@ -551,10 +555,10 @@ export default function AdminPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Downtown Central Branch"
+                      placeholder="e.g., Downtown Central Branch"
                       value={bankName}
                       onChange={(e) => setBankName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-xs"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-2xs"
                     />
                   </div>
 
@@ -565,10 +569,10 @@ export default function AdminPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. BNK-0102"
+                      placeholder="e.g., BNK-0102"
                       value={bankCode}
                       onChange={(e) => setBankCode(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono text-xs sm:text-sm uppercase shadow-xs"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono text-xs sm:text-sm uppercase shadow-2xs"
                     />
                   </div>
 
@@ -579,20 +583,20 @@ export default function AdminPage() {
                     <input
                       type="tel"
                       required
-                      placeholder="e.g. +91 98765 43210"
+                      placeholder="e.g., +91 98765 43210"
                       value={bankPhone}
                       onChange={(e) => setBankPhone(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-xs"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-2xs"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Section 2: OpenStreetMap Location Selector */}
+              {/* Section 2: Location Selector */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🗺️</span> {t("location_selection")}
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    2. {t("location_selection")}
                   </h3>
                 </div>
 
@@ -603,43 +607,45 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* Section 3: Employees Divided by Categories */}
+              {/* Section 3: Staff Category Allocation */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    {t("emp_by_dept")}
+                    3. {t("emp_by_dept")}
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                   {/* Category 1: Manager */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl">👔</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
+                        <span className="text-xs font-mono font-semibold text-slate-600 uppercase">
+                          Manager
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
                           Min 1
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("mgr_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("mgr_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
+                    <div className="flex items-center justify-between mt-3 bg-white rounded p-1 border border-slate-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("managers", -1)}
                         disabled={staffing.managers <= 1}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-xs font-mono">
                         {staffing.managers}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("managers", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -647,33 +653,32 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 2: Cash Counters */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl">💵</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                        <span className="text-xs font-mono font-semibold text-slate-600 uppercase">
                           Cash
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("cash_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("cash_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
+                    <div className="flex items-center justify-between mt-3 bg-white rounded p-1 border border-slate-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("cashCounters", -1)}
                         disabled={staffing.cashCounters <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-xs font-mono">
                         {staffing.cashCounters}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("cashCounters", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -681,33 +686,32 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 3: Loan Officers */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl">📑</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-semibold">
+                        <span className="text-xs font-mono font-semibold text-slate-600 uppercase">
                           Credit
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("loan_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("loan_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
+                    <div className="flex items-center justify-between mt-3 bg-white rounded p-1 border border-slate-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("loanOfficers", -1)}
                         disabled={staffing.loanOfficers <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-xs font-mono">
                         {staffing.loanOfficers}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("loanOfficers", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -715,33 +719,32 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 4: Customer Service */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl">🎧</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                          Helpdesk
+                        <span className="text-xs font-mono font-semibold text-slate-600 uppercase">
+                          Support
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("cust_svc_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("cust_svc_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
+                    <div className="flex items-center justify-between mt-3 bg-white rounded p-1 border border-slate-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("customerService", -1)}
                         disabled={staffing.customerService <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-xs font-mono">
                         {staffing.customerService}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("customerService", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -749,33 +752,32 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 5: Account & KYC */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xl">🆔</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">
-                          Onboard
+                        <span className="text-xs font-mono font-semibold text-slate-600 uppercase">
+                          KYC
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("kyc_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("kyc_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
+                    <div className="flex items-center justify-between mt-3 bg-white rounded p-1 border border-slate-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("accountAndKyc", -1)}
                         disabled={staffing.accountAndKyc <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-xs font-mono">
                         {staffing.accountAndKyc}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("accountAndKyc", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
+                        className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -799,7 +801,7 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition shadow-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting
                     ? t("loading")
@@ -821,15 +823,15 @@ export default function AdminPage() {
                 placeholder={t("search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs shadow-xs"
+                className="w-full pl-8 pr-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-800 text-xs shadow-2xs"
               />
-              <span className="absolute left-3 top-2.5 text-slate-400 text-xs">
-                🔍
+              <span className="absolute left-2.5 top-2.5 text-slate-400">
+                <SearchIcon size={14} />
               </span>
             </div>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium border border-slate-300 transition cursor-pointer shadow-xs"
+              className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium border border-slate-300 transition cursor-pointer shadow-2xs"
             >
               {t("search")}
             </button>
@@ -848,7 +850,7 @@ export default function AdminPage() {
           </form>
 
           <div className="text-xs text-slate-500 self-center">
-            {t("total_branches")}: <span className="text-slate-900 font-bold">{branches.length}</span>
+            {t("total_branches")}: <span className="text-slate-900 font-bold font-mono">{branches.length}</span>
           </div>
         </div>
 
@@ -859,27 +861,25 @@ export default function AdminPage() {
             <p className="text-xs">{t("loading")}</p>
           </div>
         ) : branches.length === 0 ? (
-          <div className="border border-dashed border-slate-300 rounded-2xl p-12 text-center bg-white shadow-xs">
-            <span className="text-4xl">🏛️</span>
-            <h3 className="text-base font-bold text-slate-900 mt-3">
-              No Bank Branches Registered Yet
+          <div className="border border-slate-300 rounded-xl p-12 text-center bg-white shadow-2xs">
+            <h3 className="text-base font-bold text-slate-900">
+              No Registered Bank Branches
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Get started by registering your first bank branch with location,
-              phone, and staff allocation.
+              Get started by registering the first branch location and counter staff allocation.
             </p>
             <button
               onClick={() => {
                 resetForm();
                 setShowForm(true);
               }}
-              className="mt-5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition cursor-pointer"
+              className="mt-4 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs transition cursor-pointer"
             >
               {t("register_branch_btn")}
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             {branches.map((branch) => {
               const staff = branch.staffing || {
                 managers: 1,
@@ -900,17 +900,17 @@ export default function AdminPage() {
               return (
                 <div
                   key={branch._id}
-                  className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-5 shadow-xs transition space-y-4 hover:shadow-sm"
+                  className="bg-white border border-slate-200 hover:border-slate-300 rounded-lg p-4 shadow-2xs transition space-y-3"
                 >
-                  {/* Top Bar: Name, Code, Location, Actions */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  {/* Top Bar */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xl shrink-0">
-                        🏦
+                      <div className="w-9 h-9 rounded bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <BankIcon size={18} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base font-bold text-slate-900">
+                          <h3 className="text-sm font-bold text-slate-900">
                             {branch.bankName}
                           </h3>
                           <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
@@ -921,20 +921,20 @@ export default function AdminPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-slate-600 mt-1 flex-wrap">
-                          <span className="flex items-center gap-1">
-                            📍 {branch.bankLocation}
+                          <span>
+                            Location: {branch.bankLocation}
                           </span>
-                          <span className="flex items-center gap-1">
-                            📞 {branch.bankPhone}
+                          <span>
+                            Contact: {branch.bankPhone}
                           </span>
                           {coords && (
                             <a
                               href={`https://www.openstreetmap.org/?mlat=${coords.latitude}&mlon=${coords.longitude}#map=17/${coords.latitude}/${coords.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium"
+                              className="text-[11px] text-emerald-800 hover:underline font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200"
                             >
-                              🗺️ OSM: {coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)} ↗
+                              OSM: {coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)} ↗
                             </a>
                           )}
                         </div>
@@ -944,82 +944,46 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 self-end md:self-center">
                       <button
                         onClick={() => openEditModal(branch)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-medium border border-slate-300 transition cursor-pointer shadow-2xs"
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-medium border border-slate-300 transition cursor-pointer"
                       >
-                        ✏️ {t("edit")}
+                        {t("edit")}
                       </button>
                       <button
                         onClick={() =>
                           handleDelete(branch._id, branch.bankName, branch.bankCode)
                         }
-                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium border border-rose-200 transition cursor-pointer shadow-2xs"
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded text-xs font-medium border border-slate-300 hover:border-rose-200 transition cursor-pointer"
                       >
-                        🗑️ {t("delete")}
+                        {t("delete")}
                       </button>
                     </div>
                   </div>
 
-                  {/* Staff Category Allocation Badges */}
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">
-                        {t("staff_breakdown")}
+                  {/* Staff Allocations */}
+                  <div className="flex items-center justify-between text-xs flex-wrap gap-2 pt-1">
+                    <span className="font-semibold text-slate-500 uppercase tracking-wider text-[10px]">
+                      {t("staff_breakdown")}:
+                    </span>
+
+                    <div className="flex items-center gap-2 flex-wrap font-mono text-[11px]">
+                      <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                        Manager: <strong>{staff.managers ?? 1}</strong>
                       </span>
-                      <span className="font-mono text-emerald-700 font-bold">
-                        {branchTotal} {t("employees_count")}
+                      <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                        Cash: <strong>{staff.cashCounters ?? 0}</strong>
                       </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>👔</span>
-                          <span className="text-slate-600">Manager:</span>
-                        </div>
-                        <span className="font-bold text-slate-900 font-mono">
-                          {staff.managers ?? 1}
-                        </span>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>💵</span>
-                          <span className="text-slate-600">Cash:</span>
-                        </div>
-                        <span className="font-bold text-emerald-700 font-mono">
-                          {staff.cashCounters ?? 0}
-                        </span>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>📑</span>
-                          <span className="text-slate-600">Loans:</span>
-                        </div>
-                        <span className="font-bold text-purple-700 font-mono">
-                          {staff.loanOfficers ?? 0}
-                        </span>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>🎧</span>
-                          <span className="text-slate-600">Service:</span>
-                        </div>
-                        <span className="font-bold text-amber-700 font-mono">
-                          {staff.customerService ?? 0}
-                        </span>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>🆔</span>
-                          <span className="text-slate-600">KYC:</span>
-                        </div>
-                        <span className="font-bold text-cyan-700 font-mono">
-                          {staff.accountAndKyc ?? 0}
-                        </span>
-                      </div>
+                      <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                        Loans: <strong>{staff.loanOfficers ?? 0}</strong>
+                      </span>
+                      <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                        Service: <strong>{staff.customerService ?? 0}</strong>
+                      </span>
+                      <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                        KYC: <strong>{staff.accountAndKyc ?? 0}</strong>
+                      </span>
+                      <span className="bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-emerald-900 font-bold">
+                        Total: {branchTotal}
+                      </span>
                     </div>
                   </div>
                 </div>

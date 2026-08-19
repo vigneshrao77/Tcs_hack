@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Phone number has not been verified with Twilio OTP. Please verify your phone number before submitting.",
+          error: "Phone number has not been verified with SMS code. Please verify your mobile number before submitting.",
         },
         { status: 400 }
       );

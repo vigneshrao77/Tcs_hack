@@ -281,14 +281,14 @@ export default function LocationPicker({
               onFocus={() => {
                 if (suggestions.length > 0) setShowDropdown(true);
               }}
-              className="w-full pl-9 pr-8 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-sm"
+              className="w-full pl-8 pr-8 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-800 text-xs sm:text-sm shadow-2xs"
             />
-            <span className="absolute left-3 top-2.5 text-slate-400 text-xs">
-              🔍
+            <span className="absolute left-2.5 top-2.5 text-slate-400">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </span>
             {isSearching && (
-              <span className="absolute right-3 top-2.5 text-xs text-emerald-600 animate-spin">
-                ⏳
+              <span className="absolute right-3 top-2.5 text-xs text-slate-500 animate-spin">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
               </span>
             )}
           </div>
@@ -300,22 +300,19 @@ export default function LocationPicker({
             title="Use current GPS location"
             className="px-3 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
           >
-            <span>{isLocating ? "⏳" : "🎯"}</span>
-            <span className="hidden sm:inline">
-              {isLocating ? "Locating..." : "GPS"}
-            </span>
+            <span>{isLocating ? "Locating..." : "Use GPS"}</span>
           </button>
         </div>
 
         {/* Autocomplete Dropdown List */}
         {showDropdown && suggestions.length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto">
+          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
             <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200 flex items-center justify-between">
               <span>OpenStreetMap Suggestions</span>
               <button
                 type="button"
                 onClick={() => setShowDropdown(false)}
-                className="hover:text-slate-900"
+                className="hover:text-slate-900 font-bold"
               >
                 ✕
               </button>
@@ -325,9 +322,8 @@ export default function LocationPicker({
                 type="button"
                 key={item.place_id}
                 onClick={() => handleSelectSuggestion(item)}
-                className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-100 border-b border-slate-100 last:border-0 transition flex items-start gap-2 cursor-pointer"
+                className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition flex items-start gap-2 cursor-pointer"
               >
-                <span className="text-emerald-600 mt-0.5 shrink-0">📍</span>
                 <span className="line-clamp-2">{item.display_name}</span>
               </button>
             ))}
@@ -336,7 +332,7 @@ export default function LocationPicker({
       </div>
 
       {/* Interactive Map Container */}
-      <div className="relative rounded-xl overflow-hidden border border-slate-300 bg-slate-100 shadow-sm">
+      <div className="relative rounded-lg overflow-hidden border border-slate-300 bg-slate-100">
         <div
           ref={mapContainerRef}
           className="w-full h-64 sm:h-72"
@@ -344,14 +340,14 @@ export default function LocationPicker({
         />
 
         {/* Map Instructions Badge */}
-        <div className="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded-md border border-slate-200 text-[10px] text-slate-700 pointer-events-none flex items-center gap-1.5 shadow-sm">
-          <span>💡</span> Click map or drag pin to fine-tune branch location
+        <div className="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded border border-slate-300 text-[10px] text-slate-700 pointer-events-none shadow-2xs">
+          Click map or drag pin to position branch coordinates
         </div>
 
         {/* Reverse Geocoding Indicator */}
         {isReverseGeocoding && (
-          <div className="absolute top-2 right-2 z-20 bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-md text-[10px] font-semibold flex items-center gap-1.5 shadow-md">
-            <span className="animate-spin">⚙️</span> Resolving address...
+          <div className="absolute top-2 right-2 z-20 bg-slate-900 text-white px-2.5 py-1 rounded text-[10px] font-medium shadow-md">
+            Resolving address coordinates...
           </div>
         )}
       </div>
@@ -368,7 +364,7 @@ export default function LocationPicker({
             placeholder="Selected branch address will appear here (or type manually)..."
             value={address}
             onChange={handleAddressTextChange}
-            className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-sm"
+            className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-800 text-xs sm:text-sm shadow-2xs"
           />
         </div>
       </div>
@@ -378,13 +374,13 @@ export default function LocationPicker({
         <div className="flex items-center gap-3 font-mono">
           <span className="text-slate-700">
             Latitude:{" "}
-            <span className="text-emerald-700 font-bold">
+            <span className="text-slate-900 font-bold">
               {coords.lat.toFixed(6)}
             </span>
           </span>
           <span className="text-slate-700">
             Longitude:{" "}
-            <span className="text-emerald-700 font-bold">
+            <span className="text-slate-900 font-bold">
               {coords.lng.toFixed(6)}
             </span>
           </span>
@@ -394,7 +390,7 @@ export default function LocationPicker({
           href={`https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-emerald-700 hover:text-emerald-800 font-medium underline flex items-center gap-1"
+          className="text-emerald-800 hover:underline font-medium flex items-center gap-1"
         >
           View on OpenStreetMap ↗
         </a>

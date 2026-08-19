@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { BankIcon, LockIcon, ArrowRightIcon, CheckIcon } from "@/components/BankIcons";
 
 function LoginForm() {
   const router = useRouter();
@@ -22,7 +23,7 @@ function LoginForm() {
     const acc = searchParams.get("account");
     if (acc) {
       setAccountNumber(acc);
-      setSuccessMessage("Account created! Please sign in with your password.");
+      setSuccessMessage("Account created successfully. Please sign in with your credentials.");
     }
   }, [searchParams]);
 
@@ -45,16 +46,16 @@ function LoginForm() {
 
       if (res.ok && data.success) {
         localStorage.setItem("bank_user", JSON.stringify(data.data));
-        setSuccessMessage("Login successful! Redirecting to your dashboard...");
+        setSuccessMessage("Authentication successful. Redirecting to dashboard...");
         setTimeout(() => {
           router.push("/dashboard");
-        }, 1000);
+        }, 800);
       } else {
         setErrorMessage(data.error || "Invalid account number or password.");
       }
     } catch (err: unknown) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Network error during login"
+        err instanceof Error ? err.message : "Network communication error"
       );
     } finally {
       setIsSubmitting(false);
@@ -62,19 +63,19 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       {/* Top Bar with Language Switcher */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
         <LanguageSwitcher />
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Header Icon */}
+        {/* Institutional Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-3xl shadow-sm">
-            💳
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-emerald-600 text-white shadow-sm mb-1">
+            <BankIcon size={24} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             {t("login_title")}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
@@ -83,15 +84,15 @@ function LoginForm() {
         </div>
 
         {/* Card */}
-        <div className="mt-8 bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
+        <div className="mt-8 bg-white border border-slate-200 rounded-xl shadow-sm p-6 sm:p-8 space-y-5">
           {/* Alerts */}
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-between">
-              <span>⚠️ {errorMessage}</span>
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between">
+              <span>{errorMessage}</span>
               <button
                 type="button"
                 onClick={() => setErrorMessage(null)}
-                className="opacity-70 hover:opacity-100 cursor-pointer"
+                className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
               >
                 ✕
               </button>
@@ -99,8 +100,8 @@ function LoginForm() {
           )}
 
           {successMessage && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
-              <span>✅</span>
+            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
+              <CheckIcon size={14} className="text-emerald-700 shrink-0" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -113,13 +114,13 @@ function LoginForm() {
               <input
                 type="text"
                 required
-                placeholder="e.g. HDFC-84920194 or SBI-019284"
+                placeholder="e.g., BNK-84920194"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-sm uppercase placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-sm uppercase placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500"
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                {t("must_start_with")} BANK CODE
+                {t("must_start_with")} Branch Code Prefix
               </p>
             </div>
 
@@ -134,7 +135,7 @@ function LoginForm() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
@@ -157,21 +158,21 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm transition shadow-sm disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-semibold text-sm transition shadow-xs disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting ? t("loading") : t("sign_in_btn")}
             </button>
           </form>
 
           {/* Navigation Links */}
-          <div className="pt-4 border-t border-slate-100 space-y-3 text-center text-xs">
+          <div className="pt-4 border-t border-slate-100 text-center text-xs">
             <p className="text-slate-600">
               {t("no_account_yet")}{" "}
               <Link
                 href="/register"
-                className="text-emerald-700 hover:text-emerald-800 font-semibold underline"
+                className="text-emerald-700 hover:text-emerald-800 font-semibold underline inline-flex items-center gap-1"
               >
-                {t("register_with_twilio")}
+                {t("register_link")}
               </Link>
             </p>
           </div>
@@ -186,7 +187,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500">
-          Loading...
+          Loading portal...
         </div>
       }
     >

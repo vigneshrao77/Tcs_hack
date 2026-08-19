@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
           );
           return NextResponse.json({
             success: true,
-            message: "Phone number verified successfully via Twilio Verify",
+            message: "Phone number verified successfully",
           });
         } else {
           return NextResponse.json(
