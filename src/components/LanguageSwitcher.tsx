@@ -7,14 +7,14 @@ export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
   return (
-    <div className="inline-flex items-center rounded-lg bg-slate-200/70 p-0.5 border border-black/5 shadow-inner backdrop-blur-md">
+    <div className="inline-flex items-center rounded-md bg-gray-100 p-0.5 border border-gray-200">
       <button
         type="button"
         onClick={() => setLanguage("en")}
-        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all duration-150 cursor-pointer ${
+        className={`px-2.5 py-1 text-xs font-medium rounded transition-colors duration-100 cursor-pointer ${
           language === "en"
-            ? "bg-white text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.12)] font-semibold"
-            : "text-slate-600 hover:text-slate-900"
+            ? "bg-white text-gray-900 shadow-xs font-semibold"
+            : "text-gray-600 hover:text-gray-900"
         }`}
       >
         EN
@@ -23,10 +23,10 @@ export default function LanguageSwitcher() {
       <button
         type="button"
         onClick={() => setLanguage("te")}
-        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all duration-150 cursor-pointer ${
+        className={`px-2.5 py-1 text-xs font-medium rounded transition-colors duration-100 cursor-pointer ${
           language === "te"
-            ? "bg-white text-slate-900 shadow-[0_1px_3px_rgba(0,0,0,0.12)] font-semibold"
-            : "text-slate-600 hover:text-slate-900"
+            ? "bg-white text-gray-900 shadow-xs font-semibold"
+            : "text-gray-600 hover:text-gray-900"
         }`}
       >
         తెలుగు

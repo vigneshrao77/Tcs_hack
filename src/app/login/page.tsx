@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import MacWindowHeader from "@/components/MacWindowHeader";
-import { BankIcon, CheckIcon } from "@/components/BankIcons";
 
 function LoginForm() {
   const router = useRouter();
@@ -50,7 +49,7 @@ function LoginForm() {
         setSuccessMessage("Authentication successful. Redirecting to dashboard...");
         setTimeout(() => {
           router.push("/dashboard");
-        }, 800);
+        }, 600);
       } else {
         setErrorMessage(data.error || "Invalid account number or password.");
       }
@@ -64,120 +63,109 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
-      {/* Top Bar with Language Switcher */}
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111827] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      {/* Top Bar */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
         <LanguageSwitcher />
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Sleek macOS Floating Window Card */}
-        <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
           <MacWindowHeader
             title={t("login_title")}
             subtitle={t("core_banking_client")}
           />
 
           <div className="p-6 sm:p-8 space-y-6">
-            {/* Header Icon & Title */}
-            <div className="text-center space-y-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-md mb-1">
-                <BankIcon size={22} />
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 tracking-tight">
                 {t("login_title")}
               </h1>
-              <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              <p className="text-xs text-gray-500 mt-1">
                 {t("login_subtitle")}
               </p>
             </div>
 
-            {/* Alerts */}
+            {/* Error Message */}
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-rose-50/90 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between shadow-2xs">
+              <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-800 text-xs font-medium flex items-center justify-between">
                 <span>{errorMessage}</span>
                 <button
                   type="button"
                   onClick={() => setErrorMessage(null)}
-                  className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
+                  className="text-red-600 hover:text-red-900 font-bold ml-2 cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
             )}
 
+            {/* Success Message */}
             {successMessage && (
-              <div className="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2 shadow-2xs">
-                <CheckIcon size={14} className="text-emerald-700 shrink-0" />
-                <span>{successMessage}</span>
+              <div className="p-3 rounded-md bg-green-50 border border-green-200 text-green-800 text-xs font-medium">
+                {successMessage}
               </div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
-                  {t("account_number")} *
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {t("account_number")} <span className="text-gray-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. BNK-84920194"
+                  placeholder="e.g. SBI-84920194"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 font-mono text-xs uppercase placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
+                  className="w-full px-3.5 py-2 rounded-md bg-white border border-gray-300 text-gray-900 font-mono text-xs uppercase placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  {t("must_start_with")} Branch Prefix
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {t("must_start_with")} branch code
                 </p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
-                  {t("password")} *
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {t("password")} <span className="text-gray-400">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 text-xs placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
-                  />
-                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-md bg-white border border-gray-300 text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                />
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between text-xs pt-0.5">
+                <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none text-[11px]">
                   <input
                     type="checkbox"
-                    id="showPassword"
                     checked={showPassword}
                     onChange={(e) => setShowPassword(e.target.checked)}
-                    className="rounded bg-white border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                   />
-                  <label htmlFor="showPassword" className="text-slate-600 cursor-pointer text-[11px]">
-                    {t("show_password")}
-                  </label>
-                </div>
+                  <span>{t("show_password")}</span>
+                </label>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black active:to-slate-900 text-white font-medium text-xs transition shadow-sm disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 border border-slate-900/50"
+                className="w-full py-2.5 px-4 rounded-md bg-gray-900 hover:bg-black text-white font-medium text-xs shadow-xs transition-colors duration-100 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {isSubmitting ? t("loading") : t("sign_in_btn")}
               </button>
             </form>
 
-            {/* Footer Navigation */}
-            <div className="pt-4 border-t border-slate-200/80 text-center text-xs">
-              <p className="text-slate-500 text-[11px]">
+            <div className="pt-4 border-t border-gray-100 text-center text-xs">
+              <p className="text-gray-500 text-[11px]">
                 {t("no_account_yet")}{" "}
                 <Link
                   href="/register"
-                  className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-2 ml-1"
+                  className="text-gray-900 font-semibold hover:underline ml-1"
                 >
                   {t("register_link")}
                 </Link>
@@ -194,8 +182,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center text-slate-500">
-          Loading client...
+        <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-gray-500 text-xs font-mono">
+          Loading authentication client...
         </div>
       }
     >

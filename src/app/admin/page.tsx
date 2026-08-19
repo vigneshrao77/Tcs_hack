@@ -13,13 +13,11 @@ import {
   SearchIcon,
 } from "@/components/BankIcons";
 
-// Dynamic import with SSR disabled to prevent Leaflet window reference errors during SSR
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
   loading: () => (
-    <div className="h-64 rounded-xl bg-slate-100 border border-slate-300 flex flex-col items-center justify-center text-slate-500 space-y-2">
-      <div className="w-5 h-5 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-xs">Loading OpenStreetMap Geocoding...</p>
+    <div className="h-64 rounded-md bg-gray-50 border border-gray-200 flex flex-col items-center justify-center text-gray-500 font-mono text-xs">
+      Loading geocoding engine...
     </div>
   ),
 });
@@ -55,21 +53,18 @@ const ADMIN_SECRET_CODE = "123456789";
 export default function AdminPage() {
   const { t } = useLanguage();
 
-  // Admin Passcode Authorization State
   const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(false);
   const [secretInput, setSecretInput] = useState<string>("");
   const [secretError, setSecretError] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState<boolean>(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
 
-  // Bank Management State
   const [branches, setBranches] = useState<BankBranch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
 
-  // Form State
   const [bankName, setBankName] = useState<string>("");
   const [bankLocation, setBankLocation] = useState<string>("");
   const [coordinates, setCoordinates] = useState<Coordinates | undefined>(undefined);
@@ -90,7 +85,6 @@ export default function AdminPage() {
     text: string;
   } | null>(null);
 
-  // Verify sessionStorage on mount
   useEffect(() => {
     const stored = sessionStorage.getItem("admin_secret_auth");
     if (stored === ADMIN_SECRET_CODE) {
@@ -279,50 +273,46 @@ export default function AdminPage() {
     }
   };
 
-  // Initial Auth Check Spinner
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center text-slate-500 font-sans">
-        <div className="w-7 h-7 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center text-gray-500 font-mono text-xs">
+        Authenticating administrative session...
       </div>
     );
   }
 
-  // If Admin is NOT Unlocked, show sleek macOS passcode lock screen
+  // Passcode authorization screen
   if (!isAdminUnlocked) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#F8F9FA] text-[#111827] font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
           <LanguageSwitcher />
         </div>
 
         <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
-          <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-xs overflow-hidden">
             <MacWindowHeader
               title={t("security_auth")}
               subtitle={t("admin_portal")}
             />
 
             <div className="p-6 sm:p-7 space-y-5">
-              <div className="text-center space-y-1.5">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-md mb-1">
-                  <LockIcon size={22} />
-                </div>
-                <h1 className="text-lg font-bold tracking-tight text-slate-900">
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
                   {t("restricted_ops_console")}
                 </h1>
-                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                <p className="text-xs text-gray-500 mt-1">
                   {t("admin_passcode_req")}
                 </p>
               </div>
 
               {secretError && (
-                <div className="p-3 rounded-xl bg-rose-50/90 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between shadow-2xs">
+                <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-800 text-xs font-medium flex items-center justify-between">
                   <span>{secretError}</span>
                   <button
                     type="button"
                     onClick={() => setSecretError(null)}
-                    className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
+                    className="text-red-600 hover:text-red-900 font-bold ml-2 cursor-pointer"
                   >
                     ✕
                   </button>
@@ -331,7 +321,7 @@ export default function AdminPage() {
 
               <form onSubmit={handleUnlockAdmin} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     {t("security_passcode")}
                   </label>
                   <div className="relative">
@@ -342,12 +332,12 @@ export default function AdminPage() {
                       placeholder={t("enter_passcode")}
                       value={secretInput}
                       onChange={(e) => setSecretInput(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 font-mono text-xs tracking-widest placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition shadow-inner"
+                      className="w-full px-3 py-2 rounded-md bg-white border border-gray-300 text-gray-900 font-mono text-xs tracking-widest placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowSecret(!showSecret)}
-                      className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-slate-700 cursor-pointer font-medium"
+                      className="absolute right-3 top-2 text-xs text-gray-500 hover:text-gray-900 cursor-pointer font-medium"
                     >
                       {showSecret ? t("hide") : t("show")}
                     </button>
@@ -356,16 +346,16 @@ export default function AdminPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black text-white font-medium text-xs transition shadow-sm cursor-pointer border border-slate-900/50"
+                  className="w-full py-2.5 px-4 rounded-md bg-gray-900 hover:bg-black text-white font-medium text-xs shadow-xs transition-colors duration-100 cursor-pointer"
                 >
                   {t("authenticate_console")}
                 </button>
               </form>
 
-              <div className="pt-3 border-t border-slate-200/80 text-center">
+              <div className="pt-3 border-t border-gray-100 text-center">
                 <Link
                   href="/dashboard"
-                  className="text-xs text-slate-500 hover:text-slate-800 transition text-[11px]"
+                  className="text-xs text-gray-500 hover:text-gray-900 transition-colors text-[11px]"
                 >
                   {t("return_to_customer")}
                 </Link>
@@ -377,7 +367,7 @@ export default function AdminPage() {
     );
   }
 
-  // Metrics calculations
+  // Metrics
   const totalBranchesCount = branches.length;
   const totalStaffCount = branches.reduce((acc, b) => {
     const s = b.staffing;
@@ -407,35 +397,25 @@ export default function AdminPage() {
     (staffing.customerService || 0) +
     (staffing.accountAndKyc || 0);
 
-  // Render Unlocked Admin Portal
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] font-sans pb-16">
-      {/* macOS Top App Bar */}
-      <nav className="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl sticky top-0 z-30 shadow-2xs">
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111827] font-sans pb-16">
+      {/* Top App Bar */}
+      <nav className="border-b border-gray-200 bg-white sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 inline-block"></span>
-              <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 inline-block"></span>
-              <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]/50 inline-block"></span>
-            </div>
-
-            <div className="h-4 w-[1px] bg-slate-300/80 mx-1"></div>
-
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-900 text-xs sm:text-sm tracking-tight">
-                {t("admin_portal")}
-              </span>
-              <span className="text-[10px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 font-medium">
-                {t("network_setup")}
-              </span>
-            </div>
+            <span className="font-semibold text-gray-900 text-sm tracking-tight">
+              {t("admin_portal")}
+            </span>
+            <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 font-mono">
+              Branch Management Console
+            </span>
           </div>
 
           <div className="flex items-center gap-2.5">
             <LanguageSwitcher />
 
             <button
+              type="button"
               onClick={() => {
                 if (showForm && !editingBranchId) {
                   setShowForm(false);
@@ -444,106 +424,84 @@ export default function AdminPage() {
                   setShowForm(true);
                 }
               }}
-              className="px-3 py-1 rounded-lg bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 text-white font-medium text-xs transition shadow-2xs cursor-pointer border border-slate-900/50"
+              className="px-3 py-1.5 rounded-md bg-gray-900 hover:bg-black text-white font-medium text-xs transition-colors duration-100 shadow-xs cursor-pointer"
             >
               {showForm ? t("close_form_btn") : t("register_branch_btn")}
             </button>
 
             <button
+              type="button"
               onClick={handleLockAdmin}
-              className="px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-700 border border-slate-300/80 hover:bg-slate-200/90 transition text-xs font-medium cursor-pointer"
+              className="px-2.5 py-1.5 rounded-md bg-white hover:bg-gray-50 text-gray-700 font-medium text-xs border border-gray-300 transition-colors cursor-pointer"
             >
-              {t("lock")}
+              {t("lock_console")}
             </button>
           </div>
         </div>
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
-        {/* Global Alert Notification */}
+        {/* Notice Banner */}
         {alertMessage && (
           <div
-            className={`p-3.5 rounded-xl text-xs font-medium flex items-center justify-between shadow-2xs backdrop-blur-md ${
+            className={`p-3.5 rounded-md text-xs font-medium flex items-center justify-between border ${
               alertMessage.type === "success"
-                ? "bg-emerald-50/90 text-emerald-900 border border-emerald-200"
-                : "bg-rose-50/90 text-rose-900 border border-rose-200"
+                ? "bg-green-50 text-green-900 border-green-200"
+                : "bg-red-50 text-red-900 border-red-200"
             }`}
           >
-            <div>{alertMessage.text}</div>
+            <span>{alertMessage.text}</span>
             <button
+              type="button"
               onClick={() => setAlertMessage(null)}
-              className="opacity-70 hover:opacity-100 cursor-pointer font-bold"
+              className="opacity-70 hover:opacity-100 cursor-pointer font-bold ml-2"
             >
               ✕
             </button>
           </div>
         )}
 
-        {/* Stats Metrics Header */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-xl p-3.5 shadow-2xs">
-            <div className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-              {t("total_branches")}
-            </div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">
-              {totalBranchesCount}
-            </div>
-            <div className="text-[10px] text-emerald-800 mt-0.5 font-medium">
-              {t("registered_branches_badge")}
-            </div>
+        {/* Operational Statistics */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white border border-gray-200 rounded-lg p-3.5 shadow-xs">
+            <div className="text-gray-500 text-[11px] font-medium">{t("total_branches_stat")}</div>
+            <div className="text-2xl font-bold font-mono text-gray-900 mt-1">{totalBranchesCount}</div>
+            <div className="text-[11px] text-gray-400 mt-0.5">{t("active_branches_label")}</div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-xl p-3.5 shadow-2xs">
-            <div className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-              {t("total_staff")}
-            </div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">
-              {totalStaffCount}
-            </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
-              {t("staff_breakdown")}
-            </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-3.5 shadow-xs">
+            <div className="text-gray-500 text-[11px] font-medium">{t("staff_on_duty_stat")}</div>
+            <div className="text-2xl font-bold font-mono text-gray-900 mt-1">{totalStaffCount}</div>
+            <div className="text-[11px] text-gray-400 mt-0.5">{t("staff_breakdown")}</div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-xl p-3.5 shadow-2xs">
-            <div className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-              {t("cash_counters_stat")}
-            </div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">
-              {totalCashCounters}
-            </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
-              {t("cash_label")}
-            </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-3.5 shadow-xs">
+            <div className="text-gray-500 text-[11px] font-medium">{t("cash_counters_stat")}</div>
+            <div className="text-2xl font-bold font-mono text-gray-900 mt-1">{totalCashCounters}</div>
+            <div className="text-[11px] text-gray-400 mt-0.5">{t("cash_label")}</div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-xl p-3.5 shadow-2xs">
-            <div className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
-              {t("kyc_officers_stat")}
-            </div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">
-              {totalKycStaff}
-            </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
-              {t("kyc_label")}
-            </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-3.5 shadow-xs">
+            <div className="text-gray-500 text-[11px] font-medium">{t("kyc_officers_stat")}</div>
+            <div className="text-2xl font-bold font-mono text-gray-900 mt-1">{totalKycStaff}</div>
+            <div className="text-[11px] text-gray-400 mt-0.5">{t("kyc_label")}</div>
           </div>
         </div>
 
-        {/* Branch Registration Form Window */}
+        {/* Branch Registration / Edit Form */}
         {showForm && (
-          <div className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+          <div className="bg-white border border-gray-200 rounded-lg p-5 sm:p-6 shadow-xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
               <div>
-                <h2 className="text-base font-bold text-slate-900">
+                <h2 className="text-base font-semibold text-gray-900">
                   {editingBranchId
                     ? `${t("edit_branch_title")}: ${bankName}`
                     : t("reg_branch_title")}
                 </h2>
               </div>
-              <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 text-xs">
-                <span className="text-slate-500 text-[11px]">{t("assigned_staff")}</span>
-                <span className="font-bold text-slate-900 font-mono text-xs">
+              <div className="flex items-center gap-2 bg-gray-50 px-2.5 py-1 rounded border border-gray-200 text-xs">
+                <span className="text-gray-500 text-[11px]">{t("assigned_staff")}</span>
+                <span className="font-semibold text-gray-900 font-mono text-xs">
                   {formTotalStaff} {t("employees_count")}
                 </span>
               </div>
@@ -552,13 +510,13 @@ export default function AdminPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Section 1: Basic Information */}
               <div>
-                <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
                   1. {t("branch_name")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                      {t("branch_name")}
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t("branch_name")} <span className="text-gray-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -566,27 +524,27 @@ export default function AdminPage() {
                       placeholder="e.g. Downtown Central Branch"
                       value={bankName}
                       onChange={(e) => setBankName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs shadow-inner"
+                      className="w-full px-3 py-2 rounded-md bg-white border border-gray-300 text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                      {t("bank_code_unique")}
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t("bank_code_unique")} <span className="text-gray-400">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. BNK-0102"
+                      placeholder="e.g. SBI-0102"
                       value={bankCode}
                       onChange={(e) => setBankCode(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 font-mono text-xs uppercase shadow-inner"
+                      className="w-full px-3 py-2 rounded-md bg-white border border-gray-300 text-gray-900 font-mono text-xs uppercase placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                      {t("branch_phone")}
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {t("branch_phone")} <span className="text-gray-400">*</span>
                     </label>
                     <input
                       type="tel"
@@ -594,20 +552,17 @@ export default function AdminPage() {
                       placeholder="e.g. +91 98765 43210"
                       value={bankPhone}
                       onChange={(e) => setBankPhone(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs shadow-inner"
+                      className="w-full px-3 py-2 rounded-md bg-white border border-gray-300 text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Section 2: Location Selector */}
+              {/* Section 2: Location & Coordinates */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    2. {t("location_selection")}
-                  </h3>
-                </div>
-
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
+                  2. {t("location_selection")}
+                </h3>
                 <LocationPicker
                   initialLocation={bankLocation}
                   initialCoordinates={coordinates}
@@ -617,175 +572,153 @@ export default function AdminPage() {
 
               {/* Section 3: Staff Category Allocation */}
               <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    3. {t("emp_by_dept")}
-                  </h3>
-                </div>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
+                  3. {t("emp_by_dept")}
+                </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-                  {/* Category 1: Manager */}
-                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                  {/* Category: Managers */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-medium text-slate-500 uppercase">
-                          Manager
-                        </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
-                          Min 1
-                        </span>
+                      <div className="flex items-center justify-between text-[11px] text-gray-500">
+                        <span>Manager</span>
+                        <span className="font-mono">Min 1</span>
                       </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("mgr_label")}</h4>
+                      <h4 className="text-xs font-semibold text-gray-900 mt-1">{t("mgr_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2.5 bg-white rounded-lg p-1 border border-slate-200">
+                    <div className="flex items-center justify-between mt-2 bg-white rounded p-1 border border-gray-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("managers", -1)}
                         disabled={staffing.managers <= 1}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-xs font-mono">
+                      <span className="font-bold text-gray-900 text-xs font-mono">
                         {staffing.managers}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("managers", 1)}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
                     </div>
                   </div>
 
-                  {/* Category 2: Cash Counters */}
-                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                  {/* Category: Cash Counters */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-medium text-slate-500 uppercase">
-                          Cash
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("cash_label")}</h4>
+                      <div className="text-[11px] text-gray-500">Cash</div>
+                      <h4 className="text-xs font-semibold text-gray-900 mt-1">{t("cash_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2.5 bg-white rounded-lg p-1 border border-slate-200">
+                    <div className="flex items-center justify-between mt-2 bg-white rounded p-1 border border-gray-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("cashCounters", -1)}
                         disabled={staffing.cashCounters <= 0}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-xs font-mono">
+                      <span className="font-bold text-gray-900 text-xs font-mono">
                         {staffing.cashCounters}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("cashCounters", 1)}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
                     </div>
                   </div>
 
-                  {/* Category 3: Loan Officers */}
-                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                  {/* Category: Loan Officers */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-medium text-slate-500 uppercase">
-                          Credit
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("loan_label")}</h4>
+                      <div className="text-[11px] text-gray-500">Loans</div>
+                      <h4 className="text-xs font-semibold text-gray-900 mt-1">{t("loan_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2.5 bg-white rounded-lg p-1 border border-slate-200">
+                    <div className="flex items-center justify-between mt-2 bg-white rounded p-1 border border-gray-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("loanOfficers", -1)}
                         disabled={staffing.loanOfficers <= 0}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-xs font-mono">
+                      <span className="font-bold text-gray-900 text-xs font-mono">
                         {staffing.loanOfficers}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("loanOfficers", 1)}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
                     </div>
                   </div>
 
-                  {/* Category 4: Customer Service */}
-                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                  {/* Category: Customer Service */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-medium text-slate-500 uppercase">
-                          Support
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("cust_svc_label")}</h4>
+                      <div className="text-[11px] text-gray-500">Service</div>
+                      <h4 className="text-xs font-semibold text-gray-900 mt-1">{t("service_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2.5 bg-white rounded-lg p-1 border border-slate-200">
+                    <div className="flex items-center justify-between mt-2 bg-white rounded p-1 border border-gray-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("customerService", -1)}
                         disabled={staffing.customerService <= 0}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-xs font-mono">
+                      <span className="font-bold text-gray-900 text-xs font-mono">
                         {staffing.customerService}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("customerService", 1)}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
                     </div>
                   </div>
 
-                  {/* Category 5: Account & KYC */}
-                  <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                  {/* Category: Account & KYC */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-medium text-slate-500 uppercase">
-                          KYC
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-bold text-slate-900 mt-1">{t("kyc_label")}</h4>
+                      <div className="text-[11px] text-gray-500">KYC & Accts</div>
+                      <h4 className="text-xs font-semibold text-gray-900 mt-1">{t("kyc_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2.5 bg-white rounded-lg p-1 border border-slate-200">
+                    <div className="flex items-center justify-between mt-2 bg-white rounded p-1 border border-gray-200">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("accountAndKyc", -1)}
                         disabled={staffing.accountAndKyc <= 0}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-900 text-xs font-mono">
+                      <span className="font-bold text-gray-900 text-xs font-mono">
                         {staffing.accountAndKyc}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("accountAndKyc", 1)}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                        className="w-5 h-5 flex items-center justify-center rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -794,256 +727,187 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200/80">
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetForm();
-                    setShowForm(false);
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer border border-slate-300 shadow-2xs"
-                >
-                  {t("cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 text-white font-medium text-xs transition shadow-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer border border-slate-900/50"
-                >
-                  {isSubmitting
-                    ? t("loading")
-                    : editingBranchId
-                    ? t("update_branch_btn")
-                    : t("save_branch_btn")}
-                </button>
+              {/* Status & Submit */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-700">Status:</label>
+                  <select
+                    value={formStatus}
+                    onChange={(e) =>
+                      setFormStatus(e.target.value as "active" | "maintenance" | "closed")
+                    }
+                    className="px-2.5 py-1 rounded bg-white border border-gray-300 text-xs text-gray-900 cursor-pointer"
+                  >
+                    <option value="active">Active Operational</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetForm();
+                      setShowForm(false);
+                    }}
+                    className="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded text-xs font-medium cursor-pointer"
+                  >
+                    {t("cancel")}
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-1.5 bg-gray-900 hover:bg-black text-white rounded text-xs font-medium shadow-xs transition-colors duration-100 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting
+                      ? t("loading")
+                      : editingBranchId
+                      ? t("save_changes_btn")
+                      : t("create_branch_btn")}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         )}
 
-        {/* Search and Filter Section */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <form onSubmit={handleSearch} className="flex-1 max-w-md flex gap-2">
-            <div className="relative flex-1">
+        {/* Registered Branches List */}
+        <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                {t("registered_branches_title")}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {t("registered_branches_desc")}
+              </p>
+            </div>
+
+            <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"
                 placeholder={t("search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white/90 border border-slate-300/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs shadow-inner"
+                className="px-3 py-1.5 rounded-md bg-white border border-gray-300 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 w-48 sm:w-60"
               />
-              <span className="absolute left-2.5 top-2 text-slate-400">
-                <SearchIcon size={13} />
-              </span>
-            </div>
-            <button
-              type="submit"
-              className="px-3.5 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 text-slate-800 text-xs font-medium border border-slate-300/80 transition cursor-pointer shadow-2xs"
-            >
-              {t("search")}
-            </button>
-            {searchQuery && (
               <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  fetchBranches("");
-                }}
-                className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 text-xs border border-slate-300 transition cursor-pointer"
+                type="submit"
+                className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-medium rounded-md cursor-pointer transition-colors shadow-xs"
               >
-                {t("clear")}
+                {t("search_btn")}
               </button>
-            )}
-          </form>
-
-          <div className="text-[11px] text-slate-400 self-center">
-            {t("total_branches")}: <span className="text-slate-900 font-bold font-mono">{branches.length}</span>
+            </form>
           </div>
-        </div>
 
-        {/* Branches Grid */}
-        {isLoading ? (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-500 space-y-3">
-            <div className="w-7 h-7 border-2 border-slate-700 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs">{t("loading")}</p>
-          </div>
-        ) : branches.length === 0 ? (
-          <div className="border border-slate-300/80 rounded-2xl p-10 text-center bg-white/80 backdrop-blur-md shadow-2xs">
-            <h3 className="text-sm font-bold text-slate-900">
-              {t("no_branches_registered")}
-            </h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              {t("no_branches_registered_desc")}
-            </p>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowForm(true);
-              }}
-              className="mt-3.5 px-3.5 py-1.5 bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 text-white rounded-xl text-xs font-medium shadow-xs transition cursor-pointer"
-            >
-              {t("register_branch_btn")}
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-2.5">
-            {branches.map((branch) => {
-              const staff = branch.staffing || {
-                managers: 1,
-                cashCounters: 0,
-                loanOfficers: 0,
-                customerService: 0,
-                accountAndKyc: 0,
-              };
-              const branchTotal =
-                (staff.managers || 0) +
-                (staff.cashCounters || 0) +
-                (staff.loanOfficers || 0) +
-                (staff.customerService || 0) +
-                (staff.accountAndKyc || 0);
+          {isLoading ? (
+            <div className="text-center py-10 text-xs text-gray-500 font-mono">
+              Loading active branch records...
+            </div>
+          ) : branches.length === 0 ? (
+            <div className="text-center py-10 text-xs text-gray-500 font-mono">
+              No branch records found. Register a branch to begin operations.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {branches.map((branch) => {
+                const s = branch.staffing || {
+                  managers: 1,
+                  cashCounters: 0,
+                  loanOfficers: 0,
+                  customerService: 0,
+                  accountAndKyc: 0,
+                };
+                const total =
+                  (s.managers || 0) +
+                  (s.cashCounters || 0) +
+                  (s.loanOfficers || 0) +
+                  (s.customerService || 0) +
+                  (s.accountAndKyc || 0);
 
-              const coords = branch.coordinates;
-
-              return (
-                <div
-                  key={branch._id}
-                  className="bg-white/90 backdrop-blur-xl border border-slate-200/80 hover:border-slate-300 rounded-xl p-3.5 shadow-2xs transition space-y-2.5"
-                >
-                  {/* Top Bar */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 border-b border-slate-100 pb-2.5">
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
-                        <BankIcon size={16} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-xs font-bold text-slate-900">
-                            {branch.bankName}
-                          </h3>
-                          <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200">
+                return (
+                  <div
+                    key={branch._id}
+                    className="border border-gray-200 rounded-lg p-4 bg-white hover:border-gray-400 transition-colors duration-100 flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-sm text-gray-900">{branch.bankName}</h3>
+                          <span className="font-mono text-xs px-1.5 py-0.2 rounded bg-gray-100 text-gray-700 border border-gray-200">
                             {branch.bankCode}
                           </span>
-                          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase">
-                            {branch.status || "active"}
-                          </span>
                         </div>
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-0.5 flex-wrap">
-                          <span>
-                            {t("location_prefix")}: {branch.bankLocation}
-                          </span>
-                          <span>
-                            {t("contact_prefix")}: {branch.bankPhone}
-                          </span>
-                          {coords && (
-                            <a
-                              href={`https://www.openstreetmap.org/?mlat=${coords.latitude}&mlon=${coords.longitude}#map=17/${coords.latitude}/${coords.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10px] text-blue-600 hover:underline font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200"
-                            >
-                              OSM: {coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)} ↗
-                            </a>
-                          )}
+                        <span
+                          className={`text-[10px] font-mono font-medium px-2 py-0.5 rounded ${
+                            branch.status === "active"
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}
+                        >
+                          {branch.status}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{branch.bankLocation}</p>
+                      <div className="text-[11px] text-gray-400 font-mono mt-0.5">Phone: {branch.bankPhone}</div>
+                    </div>
+
+                    {/* Active Employee Counter Roster */}
+                    <div className="bg-gray-50 border border-gray-200 rounded p-2.5 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                        <span>Active Counter Roster</span>
+                        <span className="font-mono text-gray-900 font-semibold">{total} Officers</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[11px] font-mono">
+                        <div className="bg-white p-1 rounded border border-gray-200 text-center">
+                          <div className="text-gray-400 text-[9px]">MGR</div>
+                          <div className="font-semibold text-gray-900">{s.managers || 0}</div>
+                        </div>
+                        <div className="bg-white p-1 rounded border border-gray-200 text-center">
+                          <div className="text-gray-400 text-[9px]">CSH</div>
+                          <div className="font-semibold text-gray-900">{s.cashCounters || 0}</div>
+                        </div>
+                        <div className="bg-white p-1 rounded border border-gray-200 text-center">
+                          <div className="text-gray-400 text-[9px]">LNO</div>
+                          <div className="font-semibold text-gray-900">{s.loanOfficers || 0}</div>
+                        </div>
+                        <div className="bg-white p-1 rounded border border-gray-200 text-center">
+                          <div className="text-gray-400 text-[9px]">CSR</div>
+                          <div className="font-semibold text-gray-900">{s.customerService || 0}</div>
+                        </div>
+                        <div className="bg-white p-1 rounded border border-gray-200 text-center">
+                          <div className="text-gray-400 text-[9px]">KYC</div>
+                          <div className="font-semibold text-gray-900">{s.accountAndKyc || 0}</div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end md:self-center">
+                    {/* Actions */}
+                    <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-2 text-xs">
                       <button
+                        type="button"
                         onClick={() => openEditModal(branch)}
-                        className="px-2.5 py-1 bg-slate-100/90 hover:bg-slate-200/90 text-slate-800 rounded-lg text-xs font-medium border border-slate-300/80 transition cursor-pointer"
+                        className="px-2.5 py-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded text-xs font-medium transition-colors cursor-pointer"
                       >
-                        {t("edit")}
+                        {t("edit_btn")}
                       </button>
                       <button
-                        onClick={() =>
-                          handleDelete(branch._id, branch.bankName, branch.bankCode)
-                        }
-                        className="px-2.5 py-1 bg-slate-100/90 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded-lg text-xs font-medium border border-slate-300/80 hover:border-rose-200 transition cursor-pointer"
+                        type="button"
+                        onClick={() => handleDelete(branch._id, branch.bankName, branch.bankCode)}
+                        className="px-2.5 py-1 bg-white hover:bg-red-50 hover:text-red-700 text-gray-700 border border-gray-300 hover:border-red-200 rounded text-xs font-medium transition-colors cursor-pointer"
                       >
-                        {t("delete")}
+                        {t("delete_btn")}
                       </button>
                     </div>
                   </div>
-
-                  {/* Staff Allocations Summary */}
-                  <div className="flex items-center justify-between text-xs flex-wrap gap-2 pt-1 border-t border-slate-100">
-                    <span className="font-medium text-slate-400 uppercase tracking-wider text-[9px]">
-                      {t("staff_breakdown")}:
-                    </span>
-
-                    <div className="flex items-center gap-1.5 flex-wrap font-mono text-[10px]">
-                      <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        {t("mgr_label")}: <strong>{staff.managers ?? 1}</strong>
-                      </span>
-                      <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        {t("cash_label")}: <strong>{staff.cashCounters ?? 0}</strong>
-                      </span>
-                      <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        {t("loan_label")}: <strong>{staff.loanOfficers ?? 0}</strong>
-                      </span>
-                      <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        {t("cust_svc_label")}: <strong>{staff.customerService ?? 0}</strong>
-                      </span>
-                      <span className="bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-slate-600">
-                        {t("kyc_label")}: <strong>{staff.accountAndKyc ?? 0}</strong>
-                      </span>
-                      <span className="bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-bold">
-                        {t("assigned_staff")} {branchTotal}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Active Employee Query Mapping Roster */}
-                  <div className="pt-2 border-t border-slate-100 bg-slate-50/60 rounded-lg p-2.5 space-y-1.5">
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                      <span>Active Employee Counter Roster & Query Routing</span>
-                      <span className="text-[9px] font-mono text-emerald-700 font-medium">Automatic Query Routing Active</span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-[10px] font-mono">
-                      {Array.from({ length: staff.managers || 1 }).map((_, i) => (
-                        <div key={`mgr-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
-                          <div className="font-bold text-slate-900">MGR-0{i + 1}</div>
-                          <div className="text-slate-500 text-[9px] truncate">Branch Manager</div>
-                          <div className="text-slate-400 text-[8px] mt-0.5">Manager Desk #{i + 1}</div>
-                        </div>
-                      ))}
-                      {Array.from({ length: staff.cashCounters || 0 }).map((_, i) => (
-                        <div key={`csh-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
-                          <div className="font-bold text-slate-900">CSH-0{i + 1}</div>
-                          <div className="text-slate-500 text-[9px] truncate">Cashier Officer</div>
-                          <div className="text-slate-400 text-[8px] mt-0.5">Cash Counter #{i + 1}</div>
-                        </div>
-                      ))}
-                      {Array.from({ length: staff.loanOfficers || 0 }).map((_, i) => (
-                        <div key={`lno-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
-                          <div className="font-bold text-slate-900">LNO-0{i + 1}</div>
-                          <div className="text-slate-500 text-[9px] truncate">Credit & Loan Officer</div>
-                          <div className="text-slate-400 text-[8px] mt-0.5">Loan Desk #{i + 1}</div>
-                        </div>
-                      ))}
-                      {Array.from({ length: staff.customerService || 0 }).map((_, i) => (
-                        <div key={`csr-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
-                          <div className="font-bold text-slate-900">CSR-0{i + 1}</div>
-                          <div className="text-slate-500 text-[9px] truncate">Customer Support</div>
-                          <div className="text-slate-400 text-[8px] mt-0.5">Service Desk #{i + 1}</div>
-                        </div>
-                      ))}
-                      {Array.from({ length: staff.accountAndKyc || 0 }).map((_, i) => (
-                        <div key={`kyc-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
-                          <div className="font-bold text-slate-900">KYC-0{i + 1}</div>
-                          <div className="text-slate-500 text-[9px] truncate">KYC Specialist</div>
-                          <div className="text-slate-400 text-[8px] mt-0.5">KYC Counter #{i + 1}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

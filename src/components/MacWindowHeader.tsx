@@ -15,30 +15,31 @@ export default function MacWindowHeader({
 }: MacWindowHeaderProps) {
   return (
     <div
-      className={`flex items-center justify-between px-4 py-3 bg-gradient-to-b from-slate-100/90 to-slate-200/80 border-b border-slate-200/80 rounded-t-2xl select-none ${className}`}
+      className={`flex items-center justify-between px-5 py-3.5 bg-white border-b border-gray-200 rounded-t-lg select-none ${className}`}
     >
-      {/* Traffic Light Buttons */}
-      <div className="flex items-center gap-2 w-20">
-        <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 shadow-2xs inline-block"></span>
-        <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 shadow-2xs inline-block"></span>
-        <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]/50 shadow-2xs inline-block"></span>
+      {/* Institutional Security Status */}
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
+        <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+          Secure System
+        </span>
       </div>
 
-      {/* Centered Window Title */}
-      <div className="flex-1 text-center min-w-0 px-2">
+      {/* Centered Document / Section Title */}
+      <div className="flex-1 text-center min-w-0 px-4">
         {title && (
-          <div className="text-xs font-semibold text-slate-700 truncate tracking-tight">
+          <div className="text-xs font-semibold text-gray-900 truncate">
             {title}
           </div>
         )}
         {subtitle && (
-          <div className="text-[10px] text-slate-500 truncate -mt-0.5">
+          <div className="text-[11px] text-gray-500 truncate">
             {subtitle}
           </div>
         )}
       </div>
 
-      {/* Right side actions or spacer */}
+      {/* Right Actions / Spacer */}
       <div className="flex items-center justify-end gap-2 min-w-20">
         {children}
       </div>
