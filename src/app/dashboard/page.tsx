@@ -248,11 +248,37 @@ export default function DashboardPage() {
   };
 
   // Senior Citizen Voice-to-Text Input Handler using Sarvam AI STT
-  const startVoiceInput = () => {
-    startMediaRecorderVoice();
-  };
+  const startVoiceInput = async () => {
+    setVoiceStatusNotice(null);
 
-  const startMediaRecorderVoice = async () => {
+    // 1. Start live speech recognition for real-time visual feedback
+    const win = typeof window !== "undefined" ? (window as any) : null;
+    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = language === "te" ? "te-IN" : "en-IN";
+
+        recognition.onresult = (event: any) => {
+          let liveText = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            liveText += event.results[i][0].transcript;
+          }
+          if (liveText) {
+            setDetailedExplanation(liveText);
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (err) {
+        console.warn("Live speech recognition not started:", err);
+      }
+    }
+
+    // 2. Start high-fidelity audio recording for Sarvam AI (saarika:v2.5)
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         alert("Microphone access is not supported in this browser.");
@@ -260,18 +286,34 @@ export default function DashboardPage() {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+
+      let selectedMime = "audio/webm";
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+          selectedMime = "audio/webm;codecs=opus";
+        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+          selectedMime = "audio/webm";
+        } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
+          selectedMime = "audio/ogg;codecs=opus";
+        } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          selectedMime = "audio/mp4";
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: selectedMime,
+      });
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
       };
 
       mediaRecorder.onstop = async () => {
         setIsListeningVoice(false);
         setVoiceStatusNotice(t("ai_analyzing"));
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
 
+        const audioBlob = new Blob(audioChunksRef.current, { type: selectedMime });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
@@ -282,7 +324,7 @@ export default function DashboardPage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 audioBase64: base64Audio,
-                mimeType: "audio/webm",
+                mimeType: selectedMime,
                 language: language === "te" ? "te" : "en",
               }),
             });
@@ -304,7 +346,7 @@ export default function DashboardPage() {
         stream.getTracks().forEach((trk) => trk.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(250);
       mediaRecorderRef.current = mediaRecorder;
       setIsListeningVoice(true);
       setVoiceStatusNotice(t("listening"));
@@ -316,7 +358,7 @@ export default function DashboardPage() {
       }, 8000);
     } catch {
       setIsListeningVoice(false);
-      alert("Microphone permission denied. Please allow microphone access.");
+      alert("Microphone permission denied. Please allow microphone access in your browser.");
     }
   };
 

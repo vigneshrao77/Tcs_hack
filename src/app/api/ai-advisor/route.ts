@@ -602,7 +602,7 @@ Respond ONLY with the raw JSON object. Do not include markdown code block backti
 `;
 
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-1.5-flash",
           contents: prompt,
         });
 
