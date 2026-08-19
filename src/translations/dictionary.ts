@@ -64,6 +64,13 @@ export const translations: Record<Language, Record<string, string>> = {
     branch_operating_hours: "Bank Hours: 9:00 AM to 5:00 PM",
     mandatory_visit_badge: "Branch Visit Required",
     operating_hours_tag: "Working Hours: 9:00 AM – 5:00 PM",
+    select_time_slot: "Choose Your Preferred Visit Time Slot (9:00 AM – 5:00 PM)",
+    today_slots: "Today",
+    tomorrow_slots: "Tomorrow",
+    slot_available: "Available",
+    slot_full: "Booked Out",
+    slot_past: "Passed",
+    selected_slot_label: "Selected Time Slot:",
 
     // Dashboard & Profile
     welcome_back: "Welcome back",
@@ -285,6 +292,13 @@ export const translations: Record<Language, Record<string, string>> = {
     branch_operating_hours: "బ్యాంకు పని వేళలు: ఉదయం 9:00 నుండి సాయంత్రం 5:00 వరకు",
     mandatory_visit_badge: "భౌతిక బ్రాంచ్ సందర్శన అవసరం",
     operating_hours_tag: "పని వేళలు: ఉదయం 9:00 - సాయంత్రం 5:00",
+    select_time_slot: "మీకు కావలసిన సమయాన్ని ఎంచుకోండి (9:00 AM – 5:00 PM)",
+    today_slots: "ఈరోజు",
+    tomorrow_slots: "రేపు",
+    slot_available: "అందుబాటులో ఉంది",
+    slot_full: "పూర్తయింది",
+    slot_past: "గడిచింది",
+    selected_slot_label: "మీరు ఎంచుకున్న సమయం:",
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",

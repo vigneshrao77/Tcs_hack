@@ -82,6 +82,18 @@ interface AIAdviceResponse {
   bestTimeToVisit: string;
 }
 
+export interface TimeSlotOption {
+  slot: string;
+  from: string;
+  to: string;
+  startMinutes: number;
+  endMinutes: number;
+  available: boolean;
+  status: "available" | "full" | "past";
+  bookedCount: number;
+  capacity: number;
+}
+
 const SERVICE_OPTIONS: BankingServiceType[] = [
   "Cash withdrawal or deposit",
   "Account opening and closing",
@@ -144,6 +156,13 @@ export default function DashboardPage() {
   const [aiAdvice, setAiAdvice] = useState<AIAdviceResponse | null>(null);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
   const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
+
+  // Time Slot Selection State
+  const [slotDateOption, setSlotDateOption] = useState<"today" | "tomorrow">("today");
+  const [availableSlots, setAvailableSlots] = useState<TimeSlotOption[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlotOption | null>(null);
+  const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
+  const [slotDateLabel, setSlotDateLabel] = useState<string>("");
 
   // Speech-to-Speech State
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
@@ -266,6 +285,42 @@ export default function DashboardPage() {
     }
   };
 
+  // Fetch Available Time Slots (9:00 AM - 5:00 PM) for selected service
+  const fetchAvailableSlots = async (
+    serviceName: BankingServiceType,
+    dateOpt: "today" | "tomorrow" = "today"
+  ) => {
+    if (!user) return;
+    setIsLoadingSlots(true);
+    const meta = SERVICE_CATEGORY_MAP[serviceName];
+
+    try {
+      const res = await fetch(
+        `/api/tokens/slots?bankCode=${encodeURIComponent(user.bankCode)}&category=${encodeURIComponent(
+          meta.category
+        )}&dateOption=${dateOpt}`
+      );
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        const slots: TimeSlotOption[] = data.data.slots || [];
+        setAvailableSlots(slots);
+        setSlotDateLabel(data.data.slotDate || (dateOpt === "tomorrow" ? "Tomorrow" : "Today"));
+
+        // Auto select first available slot
+        const firstAvail = slots.find((s) => s.available);
+        if (firstAvail) {
+          setSelectedSlot(firstAvail);
+        } else if (slots.length > 0) {
+          setSelectedSlot(slots[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load time slots:", err);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
   // Service Selection Trigger
   const handleSelectService = (serviceName: BankingServiceType) => {
     setSelectedService(serviceName);
@@ -273,12 +328,21 @@ export default function DashboardPage() {
     setAiAdvice(null);
     setCheckedDocs({});
     stopSpeechAudio();
+    setSlotDateOption("today");
 
     fetchGeminiAdvice(serviceName, "", false);
+    fetchAvailableSlots(serviceName, "today");
 
     setTimeout(() => {
       drawerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 150);
+  };
+
+  const handleDateOptionChange = (dateOpt: "today" | "tomorrow") => {
+    setSlotDateOption(dateOpt);
+    if (selectedService) {
+      fetchAvailableSlots(selectedService, dateOpt);
+    }
   };
 
   // Automatic Gemini AI Evaluation
@@ -568,6 +632,15 @@ export default function DashboardPage() {
           serviceType: selectedService,
           notes: detailedExplanation.trim(),
           isMandatoryVisit: isMandatory,
+          dateOption: slotDateOption,
+          selectedSlot: selectedSlot
+            ? {
+                slot: selectedSlot.slot,
+                from: selectedSlot.from,
+                to: selectedSlot.to,
+                slotDate: slotDateLabel,
+              }
+            : null,
         }),
       });
 
@@ -898,7 +971,7 @@ export default function DashboardPage() {
               </span>
               {activeToken && (
                 <span className="text-xs text-gray-500 font-mono">
-                  Active Ticket: <strong className="text-gray-900">{activeToken.tokenNumber}</strong>
+                  {t("active_badge")}: <strong className="text-gray-900">{activeToken.tokenNumber}</strong>
                 </span>
               )}
             </div>
@@ -995,18 +1068,6 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              {/* Operating Hours Notice Preview */}
-              <div className="p-2.5 rounded bg-blue-50 border border-blue-200 text-blue-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
-                <div className="flex items-center gap-1.5">
-                  <ClockIcon size={13} className="text-blue-700" />
-                  <span className="font-semibold">{t("appointment_window")}:</span>
-                  <span>Assigned between 09:00 AM – 05:00 PM</span>
-                </div>
-                <span className="text-[10px] text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-200">
-                  {t("branch_operating_hours")}
-                </span>
-              </div>
-
               {/* Detailed Explanation Text / Sarvam Voice */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -1049,6 +1110,117 @@ export default function DashboardPage() {
                   }}
                   className="w-full px-3 py-2 rounded-md bg-white border border-gray-300 text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 resize-none"
                 />
+              </div>
+
+              {/* Available Time Slots Grid (9:00 AM - 5:00 PM) */}
+              <div className="space-y-2.5 bg-white border border-gray-200 rounded-md p-4 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <ClockIcon size={14} className="text-gray-800" />
+                    <span className="text-xs font-semibold text-gray-900">
+                      {t("select_time_slot")}
+                    </span>
+                  </div>
+
+                  {/* Date Switcher: Today vs Tomorrow */}
+                  <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded text-xs self-start sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDateOptionChange("today")}
+                      className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                        slotDateOption === "today"
+                          ? "bg-white text-gray-900 shadow-2xs font-semibold"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      {t("today_slots")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDateOptionChange("tomorrow")}
+                      className={`px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                        slotDateOption === "tomorrow"
+                          ? "bg-white text-gray-900 shadow-2xs font-semibold"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      {t("tomorrow_slots")}
+                    </button>
+                  </div>
+                </div>
+
+                {isLoadingSlots ? (
+                  <div className="py-6 text-center text-xs text-gray-500 font-mono">
+                    Checking available counter slots...
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {availableSlots.map((item) => {
+                        const isSelected = selectedSlot?.slot === item.slot;
+                        return (
+                          <button
+                            key={item.slot}
+                            type="button"
+                            disabled={!item.available}
+                            onClick={() => setSelectedSlot(item)}
+                            className={`p-2 rounded border text-left transition-colors flex flex-col justify-between gap-1 cursor-pointer ${
+                              isSelected
+                                ? "bg-gray-900 text-white border-gray-900 shadow-2xs"
+                                : item.available
+                                ? "bg-white border-gray-200 hover:border-gray-400 text-gray-800"
+                                : "bg-gray-50 border-gray-200 text-gray-400 opacity-60 cursor-not-allowed"
+                            }`}
+                          >
+                            <div className="text-[11px] font-mono font-semibold">
+                              {item.slot}
+                            </div>
+                            <div className="flex items-center justify-between text-[9px]">
+                              <span
+                                className={`font-mono px-1 py-0.2 rounded ${
+                                  isSelected
+                                    ? "bg-gray-800 text-gray-200"
+                                    : item.status === "available"
+                                    ? "bg-green-50 text-green-700 border border-green-200"
+                                    : item.status === "full"
+                                    ? "bg-red-50 text-red-700 border border-red-200"
+                                    : "bg-gray-100 text-gray-500"
+                                }`}
+                              >
+                                {isSelected
+                                  ? "✓ Selected"
+                                  : item.status === "available"
+                                  ? t("slot_available")
+                                  : item.status === "full"
+                                  ? t("slot_full")
+                                  : t("slot_past")}
+                              </span>
+                              {item.available && (
+                                <span className={`text-[9px] ${isSelected ? "text-gray-300" : "text-gray-400"}`}>
+                                  {item.capacity - item.bookedCount} left
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {selectedSlot && (
+                      <div className="p-2.5 rounded bg-green-50 border border-green-200 text-green-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <CheckIcon size={13} className="text-green-700 shrink-0" />
+                          <span>
+                            {t("selected_slot_label")} <strong>{selectedSlot.slot}</strong> ({slotDateLabel})
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-green-800 font-sans">
+                          {t("branch_operating_hours")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Gemini AI Analysis Box & Speech-to-Speech Audio */}
