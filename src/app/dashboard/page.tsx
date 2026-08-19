@@ -734,15 +734,15 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-xs">
             <div>
-              <span className="text-[11px] text-gray-400 uppercase font-medium">Registered Mobile</span>
+              <span className="text-[11px] text-gray-400 uppercase font-medium">{t("registered_phone")}</span>
               <div className="font-mono text-gray-800 font-medium mt-0.5">{user.phone}</div>
             </div>
             <div>
-              <span className="text-[11px] text-gray-400 uppercase font-medium">Assigned Branch</span>
+              <span className="text-[11px] text-gray-400 uppercase font-medium">Bank Branch</span>
               <div className="text-gray-800 font-medium mt-0.5">{user.bankName} ({user.bankCode})</div>
             </div>
             <div>
-              <span className="text-[11px] text-gray-400 uppercase font-medium">Permanent Address</span>
+              <span className="text-[11px] text-gray-400 uppercase font-medium">{t("permanent_address")}</span>
               <div className="text-gray-800 font-medium mt-0.5 truncate">{user.permanentAddress}</div>
             </div>
           </div>
@@ -766,7 +766,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <h2 className="text-sm font-semibold text-gray-900 mt-0.5">
-                    {t(SERVICE_KEYS[activeToken.serviceType]?.nameKey || "srv_cash")}
+                    {t(SERVICE_KEYS[activeToken.serviceType]?.nameKey || "srv_cash_name")}
                   </h2>
                 </div>
               </div>
@@ -821,7 +821,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <div className="text-[10px] uppercase font-semibold text-gray-400">
-                    Assigned Bank Employee
+                    Bank Officer on Duty
                   </div>
                   <div className="text-xs font-semibold text-gray-900 flex items-center gap-2 mt-0.5">
                     <span>{activeToken.assignedEmployeeName || "Counter Officer"}</span>
@@ -835,7 +835,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-center">
-                <span className="text-xs text-gray-500">Designated Desk:</span>
+                <span className="text-xs text-gray-500">{t("target_counter")}:</span>
                 <span className="text-xs font-semibold text-gray-900 font-mono bg-white px-2.5 py-1 rounded border border-gray-200">
                   {activeToken.assignedDesk || activeToken.categoryLabel}
                 </span>

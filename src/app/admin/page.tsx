@@ -17,7 +17,7 @@ const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
   loading: () => (
     <div className="h-64 rounded-md bg-gray-50 border border-gray-200 flex flex-col items-center justify-center text-gray-500 font-mono text-xs">
-      Loading geocoding engine...
+      Loading map location picker...
     </div>
   ),
 });
@@ -406,8 +406,8 @@ export default function AdminPage() {
             <span className="font-semibold text-gray-900 text-sm tracking-tight">
               {t("admin_portal")}
             </span>
-            <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 font-mono">
-              Branch Management Console
+            <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 font-medium">
+              {t("network_setup")}
             </span>
           </div>
 
