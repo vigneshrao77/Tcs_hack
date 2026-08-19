@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +23,7 @@ import {
   ShieldCheckIcon,
   CheckIcon,
   UserIcon,
+  MicrophoneIcon,
 } from "@/components/BankIcons";
 
 interface CustomerUser {
@@ -98,7 +99,7 @@ const renderServiceIcon = (iconId: string, size = 18) => {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
@@ -112,6 +113,49 @@ export default function DashboardPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // Voice recording state for drawer
+  const [isListeningDrawer, setIsListeningDrawer] = useState<boolean>(false);
+  const drawerRecognitionRef = useRef<any>(null);
+
+  const startDrawerVoice = () => {
+    const win = typeof window !== "undefined" ? (window as any) : null;
+    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      try {
+        const rec = new SpeechRecognition();
+        rec.continuous = false;
+        rec.interimResults = true;
+        rec.lang = language === "te" ? "te-IN" : "en-IN";
+
+        rec.onstart = () => setIsListeningDrawer(true);
+        rec.onresult = (event: any) => {
+          let str = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            str += event.results[i][0].transcript;
+          }
+          if (str) setNotes(str);
+        };
+        rec.onerror = () => setIsListeningDrawer(false);
+        rec.onend = () => setIsListeningDrawer(false);
+
+        drawerRecognitionRef.current = rec;
+        rec.start();
+        return;
+      } catch {}
+    }
+    alert("Voice input is not supported in this browser.");
+  };
+
+  const stopDrawerVoice = () => {
+    if (drawerRecognitionRef.current) {
+      try {
+        drawerRecognitionRef.current.stop();
+      } catch {}
+    }
+    setIsListeningDrawer(false);
+  };
 
   // Helper for localized counter category label
   const getCategoryDeskName = (category: string, fallback: string) => {
@@ -654,7 +698,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Gemini AI Banking Advisor (Pre-screening & Document Checklist) */}
+        {/* Gemini AI Banking Advisor (Pre-screening & Document Checklist + Voice-to-Text) */}
         <GeminiAdvisor
           initialService={selectedService}
           onSelectService={(srv) => setSelectedService(srv)}
@@ -778,15 +822,29 @@ export default function DashboardPage() {
 
               <form onSubmit={handleRequestToken} className="space-y-3.5">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                    {t("additional_notes")}
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={t("notes_placeholder")}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-medium text-slate-700">
+                      {t("detailed_explanation")}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={isListeningDrawer ? stopDrawerVoice : startDrawerVoice}
+                      className={`text-[10px] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 cursor-pointer transition ${
+                        isListeningDrawer
+                          ? "bg-rose-600 text-white animate-pulse"
+                          : "bg-slate-200 hover:bg-slate-300 text-slate-800"
+                      }`}
+                    >
+                      <MicrophoneIcon size={12} />
+                      <span>{isListeningDrawer ? t("stop_listening") : t("voice_input_btn")}</span>
+                    </button>
+                  </div>
+                  <textarea
+                    rows={2}
+                    placeholder={t("detailed_explanation_placeholder")}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-inner"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-inner resize-none"
                   />
                 </div>
 

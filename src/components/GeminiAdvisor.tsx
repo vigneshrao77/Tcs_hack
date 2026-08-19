@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { BankingServiceType } from "@/types/serviceTypes";
-import { CheckIcon, SparklesIcon, UserIcon } from "@/components/BankIcons";
+import {
+  CheckIcon,
+  SparklesIcon,
+  UserIcon,
+  MicrophoneIcon,
+} from "@/components/BankIcons";
 
 interface DocumentRequirement {
   name: string;
@@ -30,6 +35,12 @@ interface GeminiAdvisorProps {
   onSelectService?: (service: BankingServiceType) => void;
 }
 
+// Declare webkitSpeechRecognition on window for TypeScript
+interface IWindow extends Window {
+  SpeechRecognition?: any;
+  webkitSpeechRecognition?: any;
+}
+
 export default function GeminiAdvisor({
   initialService,
   onSelectService,
@@ -37,17 +48,177 @@ export default function GeminiAdvisor({
   const { t, language } = useLanguage();
 
   const [queryInput, setQueryInput] = useState<string>("");
+  const [detailedExplanation, setDetailedExplanation] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>(initialService || "");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [advice, setAdvice] = useState<AIAdviceResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
 
+  // Voice recording state (Voice to Text for Seniors)
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // Update selectedService if prop changes
+  useEffect(() => {
+    if (initialService) {
+      setSelectedService(initialService);
+    }
+  }, [initialService]);
+
+  // Handle Voice-to-Text Speech Recognition (Web Speech API + Gemini Fallback)
+  const startVoiceInput = () => {
+    setErrorMsg(null);
+    setVoiceNotice(null);
+
+    const win = typeof window !== "undefined" ? (window as unknown as IWindow) : null;
+    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = language === "te" ? "te-IN" : "en-IN";
+
+        recognition.onstart = () => {
+          setIsListening(true);
+          setVoiceNotice(t("listening"));
+        };
+
+        recognition.onresult = (event: any) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          if (transcript) {
+            setDetailedExplanation(transcript);
+            if (!queryInput) {
+              setQueryInput(transcript);
+            }
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn("Speech recognition error:", event.error);
+          setIsListening(false);
+          setVoiceNotice(null);
+          // Fallback to MediaRecorder audio recording
+          startMediaRecorderVoice();
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+          setVoiceNotice(t("voice_converted"));
+          setTimeout(() => setVoiceNotice(null), 3000);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        return;
+      } catch (err) {
+        console.warn("Speech recognition init failed, using MediaRecorder fallback:", err);
+      }
+    }
+
+    startMediaRecorderVoice();
+  };
+
+  // Fallback: Record Audio Blob and transcribe via Gemini API (/api/ai-transcribe)
+  const startMediaRecorderVoice = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Microphone access is not supported in this browser.");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setIsListening(false);
+        setVoiceNotice(t("ai_analyzing"));
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+        // Convert Blob to Base64
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = (reader.result as string).split(",")[1];
+          try {
+            const res = await fetch("/api/ai-transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                audioBase64: base64Audio,
+                mimeType: "audio/webm",
+                language: language === "te" ? "te" : "en",
+              }),
+            });
+            const data = await res.json();
+            if (data.success && data.text) {
+              setDetailedExplanation(data.text);
+              if (!queryInput) setQueryInput(data.text);
+              setVoiceNotice(t("voice_converted"));
+            } else {
+              setVoiceNotice(null);
+            }
+          } catch (err) {
+            console.error("Transcription failed:", err);
+            setVoiceNotice(null);
+          }
+        };
+
+        // Stop all audio tracks
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsListening(true);
+      setVoiceNotice(t("listening"));
+
+      // Automatically stop recording after 8 seconds
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+        }
+      }, 8000);
+    } catch (err) {
+      console.error("Microphone access denied:", err);
+      setIsListening(false);
+      alert("Microphone permission denied. Please allow microphone access.");
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsListening(false);
+  };
+
   const handleAnalyze = async (overrideQuery?: string, overrideService?: string) => {
     const q = overrideQuery !== undefined ? overrideQuery : queryInput;
     const s = overrideService !== undefined ? overrideService : selectedService;
+    const fullQueryText = `${q} ${detailedExplanation}`.trim();
 
-    if (!q.trim() && !s) return;
+    if (!fullQueryText && !s) return;
 
     setIsLoading(true);
     setErrorMsg(null);
@@ -58,7 +229,7 @@ export default function GeminiAdvisor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceType: s,
-          queryText: q,
+          queryText: fullQueryText,
           language: language === "te" ? "te" : "en",
         }),
       });
@@ -113,30 +284,60 @@ export default function GeminiAdvisor({
           </div>
         </div>
 
-        {advice && (
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          {/* Senior Citizen Voice Assistant Button */}
           <button
             type="button"
-            onClick={() => {
-              setAdvice(null);
-              setQueryInput("");
-            }}
-            className="text-xs text-slate-500 hover:text-slate-800 transition cursor-pointer self-start sm:self-center"
+            onClick={isListening ? stopVoiceInput : startVoiceInput}
+            title={t("senior_voice_helper")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs ${
+              isListening
+                ? "bg-rose-600 text-white animate-pulse ring-2 ring-rose-300"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300"
+            }`}
           >
-            ✕ {t("ai_close_advisory")}
+            <MicrophoneIcon size={14} className={isListening ? "animate-bounce" : "text-indigo-600"} />
+            <span>{isListening ? t("stop_listening") : t("voice_input_btn")}</span>
           </button>
-        )}
+
+          {advice && (
+            <button
+              type="button"
+              onClick={() => {
+                setAdvice(null);
+                setQueryInput("");
+                setDetailedExplanation("");
+              }}
+              className="text-xs text-slate-500 hover:text-slate-800 transition cursor-pointer px-2 py-1"
+            >
+              ✕ {t("ai_close_advisory")}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Query Search Bar */}
-      <div className="space-y-2.5">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAnalyze();
-          }}
-          className="flex flex-col sm:flex-row gap-2"
-        >
-          <div className="relative flex-1">
+      {/* Voice Status Alert */}
+      {voiceNotice && (
+        <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs flex items-center gap-2 shadow-2xs animate-fadeIn">
+          <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping"></div>
+          <span className="font-medium">{voiceNotice}</span>
+        </div>
+      )}
+
+      {/* 2 Input Fields: Field 1 (Query) & Field 2 (Detailed Explanation Textbox) */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleAnalyze();
+        }}
+        className="space-y-3"
+      >
+        {/* Field 1: Core Query / Service Selection */}
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            1. Core Banking Query / Service *
+          </label>
+          <div className="relative">
             <input
               type="text"
               placeholder={t("ai_search_placeholder")}
@@ -145,38 +346,62 @@ export default function GeminiAdvisor({
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs shadow-inner"
             />
           </div>
+        </div>
+
+        {/* Field 2: Dedicated Detailed Explanation Text Box */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+              2. {t("detailed_explanation")}
+            </label>
+            <span className="text-[10px] text-slate-400 font-mono">
+              Voice-to-Text Enabled 🎙️
+            </span>
+          </div>
+          <div className="relative">
+            <textarea
+              rows={2}
+              placeholder={t("detailed_explanation_placeholder")}
+              value={detailedExplanation}
+              onChange={(e) => setDetailedExplanation(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl bg-slate-50/80 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-xs resize-none shadow-inner"
+            />
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+          {/* Quick Suggestion Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mr-1">
+              Quick:
+            </span>
+            {QUICK_QUERIES.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => {
+                  setQueryInput(item.query);
+                  setSelectedService(item.service);
+                  handleAnalyze(item.query, item.service);
+                }}
+                className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition cursor-pointer"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
           <button
             type="submit"
-            disabled={isLoading || (!queryInput.trim() && !selectedService)}
-            className="px-4 py-2.5 bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 text-white rounded-xl text-xs font-medium shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 border border-slate-900/50"
+            disabled={isLoading || (!queryInput.trim() && !detailedExplanation.trim() && !selectedService)}
+            className="px-5 py-2.5 bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 text-white rounded-xl text-xs font-medium shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 border border-slate-900/50 shrink-0"
           >
             <SparklesIcon size={13} />
             <span>{isLoading ? t("ai_analyzing") : t("ai_consult_btn")}</span>
           </button>
-        </form>
-
-        {/* Quick Suggestion Pills */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-          <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mr-1">
-            Quick Queries:
-          </span>
-          {QUICK_QUERIES.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => {
-                setQueryInput(item.query);
-                setSelectedService(item.service);
-                handleAnalyze(item.query, item.service);
-              }}
-              className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition cursor-pointer"
-            >
-              {item.label}
-            </button>
-          ))}
         </div>
-      </div>
+      </form>
 
       {/* Error Message */}
       {errorMsg && (
@@ -223,7 +448,7 @@ export default function GeminiAdvisor({
           {(advice.mappedDepartment || advice.mappedEmployeeRole || advice.mappedDesk) && (
             <div className="bg-white/90 border border-slate-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
                   <UserIcon size={15} />
                 </div>
                 <div>

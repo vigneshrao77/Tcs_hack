@@ -48,6 +48,14 @@ export const translations: Record<Language, Record<string, string>> = {
     ai_get_ticket_btn: "Proceed to Issue Token Ticket",
     ai_close_advisory: "Dismiss Advisory",
     ai_quick_check: "Ask AI: Do I need to visit the branch?",
+    voice_input_btn: "Speak (Voice to Text)",
+    listening: "Listening... Speak your query clearly",
+    stop_listening: "Stop Recording",
+    voice_converted: "Voice converted to text successfully!",
+    detailed_explanation: "Detailed Query Explanation / Situation Details",
+    detailed_explanation_placeholder: "Explain your specific requirement (e.g. loan amount, lost card date, previous account number, specific branch query)...",
+    senior_voice_helper: "Senior Citizen Voice Assistant (Speak in English or తెలుగు)",
+
 
     // Dashboard & Profile
     welcome_back: "Welcome back",
@@ -260,6 +268,14 @@ export const translations: Record<Language, Record<string, string>> = {
     ai_get_ticket_btn: "క్యూ టోకెన్ పొందడానికి కొనసాగండి",
     ai_close_advisory: "సలహాను మూసివేయండి",
     ai_quick_check: "AI ని అడగండి: నేను బ్రాంచ్‌కు రావాలా?",
+    voice_input_btn: "వాయిస్ ద్వారా చెప్పండి (Voice to Text)",
+    listening: "వింటోంది... మీ సందేహాన్ని స్పష్టంగా మాట్లాడండి",
+    stop_listening: "రికార్డింగ్ ఆపండి",
+    voice_converted: "వాయిస్ విజయవంతంగా టెక్స్ట్‌గా మార్చబడింది!",
+    detailed_explanation: "వివరణాత్మక సమస్య / పరిస్థితి వివరాలు",
+    detailed_explanation_placeholder: "మీ నిర్దిష్ట అవసరాన్ని వివరించండి (ఉదా: లోన్ మొత్తం, కార్డు పోయిన తేదీ, మునుపటి రిఫరెన్స్)...",
+    senior_voice_helper: "సీనియర్ సిటిజన్స్ వాయిస్ అసిస్టెంట్ (తెలుగు లేదా ఇంగ్లీషులో మాట్లాడండి)",
+
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",
