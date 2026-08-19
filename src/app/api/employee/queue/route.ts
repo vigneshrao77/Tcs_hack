@@ -17,21 +17,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    // 1. Fetch active tokens for this category / bank
+    // Filter by branch code (case-insensitive)
     const matchFilter: any = {
-      bankCode,
-      createdAt: { $gte: todayStart },
+      bankCode: { $regex: new RegExp(`^${bankCode}$`, "i") },
     };
 
     if (category) {
       matchFilter.assignedCategory = category;
     }
 
-    const [activeTokens, completedTokens] = await Promise.all([
-      // Tokens waiting, called, or in_service
+    const [activeTokens, completedTokens, allRecentTokens] = await Promise.all([
+      // 1. Tokens currently waiting, called, or in_service
       ServiceToken.find({
         ...matchFilter,
         status: { $in: ["waiting", "called", "in_service"] },
@@ -39,17 +35,23 @@ export async function GET(req: NextRequest) {
         .sort({ queuePosition: 1, createdAt: 1 })
         .lean(),
 
-      // Completed today
+      // 2. Completed tokens
       ServiceToken.find({
         ...matchFilter,
         status: "completed",
       })
         .sort({ updatedAt: -1 })
-        .limit(20)
+        .limit(50)
+        .lean(),
+
+      // 3. All tokens in this domain
+      ServiceToken.find(matchFilter)
+        .sort({ createdAt: -1 })
+        .limit(100)
         .lean(),
     ]);
 
-    // Split into current in-service / called and upcoming waiting
+    // Active serving or called token
     const currentServing = activeTokens.find(
       (t) => t.status === "in_service" || t.status === "called"
     );
@@ -63,10 +65,12 @@ export async function GET(req: NextRequest) {
         currentServing: currentServing || null,
         waitingQueue,
         completedToday: completedTokens,
+        allBookings: allRecentTokens,
         stats: {
           totalWaiting: waitingQueue.length,
           totalServing: currentServing ? 1 : 0,
           totalCompleted: completedTokens.length,
+          totalAll: allRecentTokens.length,
         },
       },
     });

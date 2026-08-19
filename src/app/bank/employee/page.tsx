@@ -13,6 +13,7 @@ import {
   TicketIcon,
   CheckIcon,
   SpeakerIcon,
+  SearchIcon,
 } from "@/components/BankIcons";
 
 interface EmployeeProfile {
@@ -47,15 +48,20 @@ interface ServiceToken {
   queuePosition: number;
   estimatedWaitMinutes: number;
   timeSlot?: string;
+  timeSlotFrom?: string;
+  timeSlotTo?: string;
   slotDate?: string;
+  operatingHours?: string;
   notes?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface QueueStats {
   totalWaiting: number;
   totalServing: number;
   totalCompleted: number;
+  totalAll: number;
 }
 
 interface BankBranchInfo {
@@ -89,14 +95,18 @@ function EmployeeTerminal() {
   const [currentServing, setCurrentServing] = useState<ServiceToken | null>(null);
   const [waitingQueue, setWaitingQueue] = useState<ServiceToken[]>([]);
   const [completedToday, setCompletedToday] = useState<ServiceToken[]>([]);
+  const [allBookings, setAllBookings] = useState<ServiceToken[]>([]);
   const [queueStats, setQueueStats] = useState<QueueStats>({
     totalWaiting: 0,
     totalServing: 0,
     totalCompleted: 0,
+    totalAll: 0,
   });
   const [isLoadingQueue, setIsLoadingQueue] = useState<boolean>(false);
   const [actionAlert, setActionAlert] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"serving" | "waiting" | "completed">("serving");
+  const [activeTab, setActiveTab] = useState<"all" | "waiting" | "serving" | "completed">("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [updatingTokenId, setUpdatingTokenId] = useState<string | null>(null);
 
   // Load stored employee session on mount
   useEffect(() => {
@@ -135,8 +145,14 @@ function EmployeeTerminal() {
         setCurrentServing(data.data.currentServing);
         setWaitingQueue(data.data.waitingQueue || []);
         setCompletedToday(data.data.completedToday || []);
+        setAllBookings(data.data.allBookings || []);
         setQueueStats(
-          data.data.stats || { totalWaiting: 0, totalServing: 0, totalCompleted: 0 }
+          data.data.stats || {
+            totalWaiting: 0,
+            totalServing: 0,
+            totalCompleted: 0,
+            totalAll: 0,
+          }
         );
       }
     } catch (err) {
@@ -194,14 +210,17 @@ function EmployeeTerminal() {
     setCurrentServing(null);
     setWaitingQueue([]);
     setCompletedToday([]);
+    setAllBookings([]);
   };
 
-  // Update Token Status (Called, In Service, Completed, Cancelled)
+  // Direct One-Click Transition: Update Token Status (Waiting -> Completed, or Called, In Service)
   const handleUpdateTokenStatus = async (
     tokenId: string,
-    newStatus: "called" | "in_service" | "completed" | "cancelled"
+    newStatus: "called" | "in_service" | "completed" | "cancelled" | "waiting",
+    tokenNumber?: string
   ) => {
     if (!employee) return;
+    setUpdatingTokenId(tokenId);
     try {
       const res = await fetch(`/api/tokens/${tokenId}`, {
         method: "PATCH",
@@ -216,29 +235,52 @@ function EmployeeTerminal() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        const tokenLabel = tokenNumber || "Token";
+        const statusText =
+          newStatus === "completed"
+            ? "MARKED AS COMPLETED ✓"
+            : newStatus === "in_service"
+            ? "STARTED SERVICE ▶️"
+            : newStatus === "called"
+            ? "CALLED TO DESK 📢"
+            : newStatus.toUpperCase();
+
         setActionAlert({
           type: "success",
-          text: `Token updated to status: ${newStatus.toUpperCase()}`,
+          text: `${tokenLabel}: Status changed to ${statusText}`,
         });
-        setTimeout(() => setActionAlert(null), 3000);
-        fetchEmployeeQueue();
+        setTimeout(() => setActionAlert(null), 3500);
+        await fetchEmployeeQueue();
       } else {
         alert(data.error || "Failed to update token");
       }
     } catch (err) {
       console.error("Token update error:", err);
       alert("Network error updating token status");
+    } finally {
+      setUpdatingTokenId(null);
     }
   };
 
-  // Call Next Waiting Customer
-  const handleCallNextCustomer = async () => {
-    if (waitingQueue.length === 0) {
-      alert("No customers currently waiting in this department queue.");
-      return;
-    }
-    const nextToken = waitingQueue[0];
-    await handleUpdateTokenStatus(nextToken._id, "called");
+  // Filtered Bookings based on Search Query and Tab
+  const getFilteredBookings = () => {
+    let list: ServiceToken[] = [];
+    if (activeTab === "all") list = allBookings;
+    else if (activeTab === "waiting") list = waitingQueue;
+    else if (activeTab === "serving") list = currentServing ? [currentServing] : [];
+    else if (activeTab === "completed") list = completedToday;
+
+    if (!searchQuery.trim()) return list;
+
+    const q = searchQuery.toLowerCase().trim();
+    return list.filter(
+      (item) =>
+        item.tokenNumber.toLowerCase().includes(q) ||
+        item.customerName.toLowerCase().includes(q) ||
+        item.accountNumber.toLowerCase().includes(q) ||
+        (item.phone && item.phone.includes(q)) ||
+        item.serviceType.toLowerCase().includes(q)
+    );
   };
 
   // Render Login Screen if not authenticated
@@ -388,6 +430,8 @@ function EmployeeTerminal() {
     );
   }
 
+  const filteredBookings = getFilteredBookings();
+
   // Logged-In Active Counter Terminal
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#111827] font-sans pb-16">
@@ -423,9 +467,10 @@ function EmployeeTerminal() {
             <button
               type="button"
               onClick={fetchEmployeeQueue}
-              className="text-xs px-2 py-1 rounded bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 cursor-pointer"
+              className="text-xs px-2.5 py-1 rounded bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 cursor-pointer flex items-center gap-1"
             >
-              🔄 Refresh
+              <span>🔄</span>
+              <span className="hidden sm:inline">Refresh</span>
             </button>
 
             <LanguageSwitcher />
@@ -452,7 +497,7 @@ function EmployeeTerminal() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <CheckIcon size={14} className="shrink-0" />
+              <CheckIcon size={14} className="shrink-0 text-green-700" />
               <span>{actionAlert.text}</span>
             </div>
             <button
@@ -467,302 +512,307 @@ function EmployeeTerminal() {
         {/* Counter Metrics Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs">
-            <span className="text-[11px] text-gray-500 uppercase font-medium">Terminal Status</span>
+            <span className="text-[11px] text-gray-500 uppercase font-medium">Counter Desk</span>
             <div className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>{currentServing ? "Serving Customer" : "Counter Open & Ready"}</span>
+              <span>{employee.deskName}</span>
             </div>
-            <div className="text-[10px] text-gray-400 font-mono mt-0.5">{employee.deskName}</div>
+            <div className="text-[10px] text-gray-400 font-mono mt-0.5">{employee.domainName}</div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs">
-            <span className="text-[11px] text-gray-500 uppercase font-medium">Waiting Customers</span>
+            <span className="text-[11px] text-gray-500 uppercase font-medium">Waiting to be Served</span>
             <div className="text-2xl font-bold font-mono text-gray-900 mt-1">
               {queueStats.totalWaiting}
             </div>
-            <div className="text-[10px] text-gray-400 font-mono mt-0.5">In {employee.domainName} queue</div>
+            <div className="text-[10px] text-gray-400 font-mono mt-0.5">Customers in line</div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs">
-            <span className="text-[11px] text-gray-500 uppercase font-medium">Served Today</span>
+            <span className="text-[11px] text-gray-500 uppercase font-medium">Completed Today</span>
             <div className="text-2xl font-bold font-mono text-gray-900 mt-1">
               {queueStats.totalCompleted}
             </div>
-            <div className="text-[10px] text-gray-400 font-mono mt-0.5">Completed tickets</div>
+            <div className="text-[10px] text-gray-400 font-mono mt-0.5">Finished services</div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs">
-            <span className="text-[11px] text-gray-500 uppercase font-medium">Bank Operating Hours</span>
-            <div className="text-sm font-semibold font-mono text-gray-900 mt-1">
-              09:00 AM – 05:00 PM
+            <span className="text-[11px] text-gray-500 uppercase font-medium">Total Online Bookings</span>
+            <div className="text-2xl font-bold font-mono text-gray-900 mt-1">
+              {queueStats.totalAll}
             </div>
-            <div className="text-[10px] text-gray-400 mt-0.5">Standard daily service window</div>
+            <div className="text-[10px] text-gray-400 font-mono mt-0.5">All tickets in this category</div>
           </div>
         </div>
 
-        {/* Main Workstation Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Active Serving Window (2 Cols) */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded bg-gray-900 text-white flex items-center justify-center">
-                    <UserIcon size={14} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-900">
-                      {isTelugu ? "ప్రస్తుత సర్వీస్ కస్టమర్" : "Current Customer at Counter"}
-                    </h2>
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      {employee.roleTitle} • {employee.deskName}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {currentServing ? (
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                        currentServing.status === "in_service"
-                          ? "bg-green-50 text-green-800 border border-green-200"
-                          : "bg-amber-50 text-amber-800 border border-amber-200 animate-pulse"
-                      }`}
-                    >
-                      {currentServing.status === "in_service" ? "● IN SERVICE" : "📢 CALLED"}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
-                      DESK IDLE
-                    </span>
-                  )}
-                </div>
+        {/* Main Booked Customers Table & Status Transition Center */}
+        <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold text-gray-900 tracking-tight">
+                  {isTelugu ? "ఆన్‌లైన్ టోకెన్ బుకింగ్స్ & కస్టమర్ల జాబితా" : "Online Token Bookings & Assigned Customers"}
+                </h2>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-gray-100 text-gray-700 border border-gray-200 font-medium">
+                  {employee.domainName}
+                </span>
               </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {isTelugu
+                  ? "మీ కౌంటర్‌కు కేటాయించిన కస్టమర్ల వివరాలను చూడండి మరియు స్టేటస్‌ను Waiting నుండి Completed గా మార్చండి."
+                  : "View customers who booked online tokens for your desk and manage their queue status directly."}
+              </p>
+            </div>
 
-              {/* Active Serving Card */}
-              {currentServing ? (
-                <div className="bg-gray-50 border border-gray-300 rounded-lg p-5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
-                    <div>
-                      <div className="text-[10px] uppercase font-mono font-semibold text-gray-500">
-                        Token Ticket Number
-                      </div>
-                      <div className="text-2xl font-black font-mono text-gray-900 tracking-tight mt-0.5">
-                        {currentServing.tokenNumber}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <ClockIcon size={14} className="text-gray-600" />
-                      <div className="text-xs">
-                        <span className="text-gray-500 text-[10px] block">Scheduled Slot:</span>
-                        <strong className="font-mono text-gray-900">
-                          {currentServing.timeSlot || "09:00 AM - 09:30 AM"}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div>
-                      <span className="text-[10px] text-gray-400 uppercase font-medium">Customer Name</span>
-                      <div className="font-semibold text-gray-900 mt-0.5">{currentServing.customerName}</div>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-gray-400 uppercase font-medium">Account Number</span>
-                      <div className="font-mono text-gray-900 font-semibold mt-0.5">{currentServing.accountNumber}</div>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-gray-400 uppercase font-medium">Contact Phone</span>
-                      <div className="font-mono text-gray-900 mt-0.5">{currentServing.phone || "N/A"}</div>
-                    </div>
-                  </div>
-
-                  {currentServing.notes && (
-                    <div className="p-3 bg-white border border-gray-200 rounded text-xs">
-                      <span className="text-[10px] text-gray-400 uppercase font-medium block">
-                        Customer Notes / Inquiry Details:
-                      </span>
-                      <p className="text-gray-800 mt-0.5 italic">"{currentServing.notes}"</p>
-                    </div>
-                  )}
-
-                  {/* Actions for active ticket */}
-                  <div className="pt-2 flex flex-wrap items-center gap-2">
-                    {currentServing.status === "called" && (
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateTokenStatus(currentServing._id, "in_service")}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
-                      >
-                        <CheckIcon size={13} />
-                        <span>▶️ Start Service</span>
-                      </button>
-                    )}
-
-                    {currentServing.status === "in_service" && (
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateTokenStatus(currentServing._id, "completed")}
-                        className="px-4 py-2 bg-gray-900 hover:bg-black text-white rounded text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
-                      >
-                        <CheckIcon size={13} />
-                        <span>✓ Complete Service & Mark Done</span>
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateTokenStatus(currentServing._id, "called")}
-                      className="px-3 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
-                    >
-                      <SpeakerIcon size={13} />
-                      <span>📢 Re-announce Token</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm("Skip or cancel this token?")) {
-                          handleUpdateTokenStatus(currentServing._id, "cancelled");
-                        }
-                      }}
-                      className="px-3 py-2 bg-white hover:bg-red-50 text-red-700 border border-gray-300 hover:border-red-200 rounded text-xs font-medium transition-colors cursor-pointer"
-                    >
-                      ✕ Skip / Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="py-12 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mx-auto">
-                    <TicketIcon size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      No Customer Currently at Counter
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {waitingQueue.length > 0
-                        ? `${waitingQueue.length} customers are waiting in queue.`
-                        : "The queue is currently clear for your counter."}
-                    </p>
-                  </div>
-
-                  {waitingQueue.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleCallNextCustomer}
-                      className="px-5 py-2.5 bg-gray-900 hover:bg-black text-white rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer inline-flex items-center gap-2"
-                    >
-                      <SpeakerIcon size={14} />
-                      <span>📢 Call Next Customer (#{waitingQueue[0].tokenNumber})</span>
-                    </button>
-                  )}
-                </div>
-              )}
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="Search name, account, token..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 rounded-md bg-gray-50 border border-gray-300 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 focus:bg-white focus:ring-1 focus:ring-gray-900 transition-colors"
+              />
+              <div className="absolute left-2.5 top-2 text-gray-400">
+                <SearchIcon size={13} />
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Live Queue & History */}
-          <div className="space-y-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs space-y-3">
-              {/* Tab Header */}
-              <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("waiting")}
-                    className={`text-xs font-semibold px-2 py-1 rounded cursor-pointer ${
-                      activeTab === "waiting" || activeTab === "serving"
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    Waiting ({waitingQueue.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("completed")}
-                    className={`text-xs font-semibold px-2 py-1 rounded cursor-pointer ${
-                      activeTab === "completed"
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    Served Today ({completedToday.length})
-                  </button>
-                </div>
-              </div>
+          {/* Tab Filter Controls */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-gray-100">
+            <button
+              type="button"
+              onClick={() => setActiveTab("all")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                activeTab === "all"
+                  ? "bg-gray-900 text-white shadow-2xs font-semibold"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
+              }`}
+            >
+              All Bookings ({queueStats.totalAll})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("waiting")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                activeTab === "waiting"
+                  ? "bg-gray-900 text-white shadow-2xs font-semibold"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
+              }`}
+            >
+              Waiting Customers ({queueStats.totalWaiting})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("serving")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                activeTab === "serving"
+                  ? "bg-gray-900 text-white shadow-2xs font-semibold"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
+              }`}
+            >
+              Currently Serving ({queueStats.totalServing})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("completed")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                activeTab === "completed"
+                  ? "bg-gray-900 text-white shadow-2xs font-semibold"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
+              }`}
+            >
+              Completed Today ({queueStats.totalCompleted})
+            </button>
+          </div>
 
-              {/* Waiting List */}
-              {(activeTab === "waiting" || activeTab === "serving") && (
-                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-                  {waitingQueue.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-gray-400 font-mono">
-                      No waiting customers in queue.
-                    </div>
-                  ) : (
-                    waitingQueue.map((item, idx) => (
-                      <div
-                        key={item._id}
-                        className="p-3 bg-gray-50 hover:bg-gray-100/80 border border-gray-200 rounded-md transition-colors flex items-center justify-between gap-2"
-                      >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-mono text-gray-400">#{idx + 1}</span>
-                            <span className="text-xs font-bold font-mono text-gray-900">
-                              {item.tokenNumber}
+          {/* List of Booked Tokens with Direct Status Actions */}
+          {filteredBookings.length === 0 ? (
+            <div className="py-12 text-center text-xs text-gray-400 font-mono bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
+              No online booked customers found in this view.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredBookings.map((token, idx) => {
+                const isUpdating = updatingTokenId === token._id;
+                const isWaiting = token.status === "waiting";
+                const isCalled = token.status === "called";
+                const isInService = token.status === "in_service";
+                const isCompleted = token.status === "completed";
+
+                return (
+                  <div
+                    key={token._id}
+                    className={`p-4 rounded-lg border transition-all ${
+                      isInService
+                        ? "bg-green-50/70 border-green-300 ring-1 ring-green-300"
+                        : isCalled
+                        ? "bg-amber-50/70 border-amber-300 ring-1 ring-amber-300"
+                        : isCompleted
+                        ? "bg-gray-50 border-gray-200 opacity-80"
+                        : "bg-white border-gray-200 hover:border-gray-300 shadow-xs"
+                    }`}
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                      {/* Left: Customer & Token Information */}
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-black font-mono px-2 py-0.5 rounded bg-gray-900 text-white">
+                            {token.tokenNumber}
+                          </span>
+
+                          <span
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                              isCompleted
+                                ? "bg-gray-200 text-gray-700 border border-gray-300"
+                                : isInService
+                                ? "bg-green-600 text-white animate-pulse"
+                                : isCalled
+                                ? "bg-amber-500 text-white animate-bounce"
+                                : "bg-blue-50 text-blue-800 border border-blue-200"
+                            }`}
+                          >
+                            {token.status}
+                          </span>
+
+                          <span className="text-xs font-semibold text-gray-900">
+                            {token.customerName}
+                          </span>
+
+                          <span className="text-xs font-mono text-gray-500">
+                            ({token.accountNumber})
+                          </span>
+
+                          {token.phone && (
+                            <span className="text-[11px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.2 rounded border border-gray-200">
+                              📞 {token.phone}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Service & Time Slot Details */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                          <div>
+                            <span className="text-gray-400">Service:</span>{" "}
+                            <strong className="text-gray-900 font-medium">{token.serviceType}</strong>
+                          </div>
+
+                          <div className="flex items-center gap-1 font-mono">
+                            <ClockIcon size={12} className="text-gray-500" />
+                            <span>
+                              Slot: <strong className="text-gray-900">{token.timeSlot || "09:00 AM - 09:30 AM"}</strong> ({token.slotDate || "Today"})
                             </span>
                           </div>
-                          <div className="text-[11px] font-medium text-gray-800">
-                            {item.customerName}
-                          </div>
-                          <div className="text-[10px] text-gray-500 font-mono">
-                            {item.timeSlot || "09:00 AM - 09:30 AM"}
-                          </div>
+
+                          {token.assignedDesk && (
+                            <div className="text-[11px] font-mono text-gray-500">
+                              Desk: {token.assignedDesk}
+                            </div>
+                          )}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateTokenStatus(item._id, "called")}
-                          className="px-2.5 py-1 bg-white hover:bg-gray-900 hover:text-white text-gray-800 border border-gray-300 rounded text-[11px] font-medium transition-colors cursor-pointer shrink-0"
-                        >
-                          Call Now
-                        </button>
+                        {/* Customer Notes */}
+                        {token.notes && (
+                          <div className="text-[11px] text-gray-700 bg-white/80 border border-gray-200 rounded p-2 italic">
+                            "{token.notes}"
+                          </div>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
 
-              {/* Completed List */}
-              {activeTab === "completed" && (
-                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-                  {completedToday.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-gray-400 font-mono">
-                      No tickets completed yet today.
+                      {/* Right: Direct Action Buttons (Waiting to Completed) */}
+                      <div className="flex flex-wrap items-center gap-2 shrink-0 pt-2 lg:pt-0">
+                        {/* Direct One-Click Button: Mark as Completed */}
+                        {!isCompleted && (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() =>
+                              handleUpdateTokenStatus(token._id, "completed", token.tokenNumber)
+                            }
+                            className="px-3.5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                          >
+                            <CheckIcon size={13} />
+                            <span>
+                              {isUpdating
+                                ? "Updating..."
+                                : isTelugu
+                                ? "✓ సేవ పూర్తయింది (Complete)"
+                                : "✓ Complete Service"}
+                            </span>
+                          </button>
+                        )}
+
+                        {/* Stage Action: Call Customer */}
+                        {isWaiting && (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() =>
+                              handleUpdateTokenStatus(token._id, "called", token.tokenNumber)
+                            }
+                            className="px-3 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                          >
+                            <SpeakerIcon size={12} />
+                            <span>📢 Call Customer</span>
+                          </button>
+                        )}
+
+                        {/* Stage Action: Start Service */}
+                        {(isWaiting || isCalled) && (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() =>
+                              handleUpdateTokenStatus(token._id, "in_service", token.tokenNumber)
+                            }
+                            className="px-3 py-2 rounded-md bg-gray-900 hover:bg-black text-white font-medium text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                          >
+                            <span>▶️ Start Service</span>
+                          </button>
+                        )}
+
+                        {/* Completed Reopen */}
+                        {isCompleted && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-medium text-green-700 bg-green-50 px-2 py-1 rounded border border-green-200">
+                              ✓ Completed
+                            </span>
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() =>
+                                handleUpdateTokenStatus(token._id, "waiting", token.tokenNumber)
+                              }
+                              className="text-[10px] text-gray-500 hover:text-gray-900 underline cursor-pointer"
+                            >
+                              Reopen
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Cancel / Skip */}
+                        {!isCompleted && (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => {
+                              if (confirm(`Cancel token ${token.tokenNumber}?`)) {
+                                handleUpdateTokenStatus(token._id, "cancelled", token.tokenNumber);
+                              }
+                            }}
+                            className="px-2.5 py-2 rounded-md bg-white hover:bg-red-50 text-gray-600 hover:text-red-700 border border-gray-300 hover:border-red-200 text-xs font-medium transition-colors cursor-pointer"
+                          >
+                            ✕ Cancel
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    completedToday.map((item) => (
-                      <div
-                        key={item._id}
-                        className="p-2.5 bg-gray-50 border border-gray-200 rounded-md flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="font-bold font-mono text-gray-900">{item.tokenNumber}</div>
-                          <div className="text-[11px] text-gray-600">{item.customerName}</div>
-                        </div>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-green-50 text-green-700 border border-green-200">
-                          ✓ Done
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
