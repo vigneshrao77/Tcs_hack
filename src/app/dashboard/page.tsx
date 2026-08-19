@@ -9,7 +9,6 @@ import {
 } from "@/types/serviceTypes";
 import { useLanguage } from "@/context/LanguageContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import GeminiAdvisor from "@/components/GeminiAdvisor";
 import {
   BankIcon,
   CashIcon,
@@ -24,6 +23,7 @@ import {
   CheckIcon,
   UserIcon,
   MicrophoneIcon,
+  SparklesIcon,
 } from "@/components/BankIcons";
 
 interface CustomerUser {
@@ -52,6 +52,26 @@ interface ActiveToken {
   estimatedWaitMinutes: number;
   notes?: string;
   createdAt: string;
+}
+
+interface DocumentRequirement {
+  name: string;
+  description: string;
+  isMandatory: boolean;
+}
+
+interface AIAdviceResponse {
+  requiresVisit: boolean;
+  visitVerdict: string;
+  summary: string;
+  mappedDepartment?: string;
+  mappedEmployeeRole?: string;
+  mappedDesk?: string;
+  digitalAlternatives: string[];
+  requiredDocuments: DocumentRequirement[];
+  prerequisites: string[];
+  estimatedCounterMinutes: number;
+  bestTimeToVisit: string;
 }
 
 const SERVICE_KEYS: Record<BankingServiceType, { nameKey: string; descKey: string }> = {
@@ -106,7 +126,7 @@ export default function DashboardPage() {
   const [activeToken, setActiveToken] = useState<ActiveToken | null>(null);
   const [isLoadingToken, setIsLoadingToken] = useState<boolean>(false);
   const [selectedService, setSelectedService] = useState<BankingServiceType | null>(null);
-  const [notes, setNotes] = useState<string>("");
+  const [detailedExplanation, setDetailedExplanation] = useState<string>("");
   const [isSubmittingToken, setIsSubmittingToken] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [alertNotice, setAlertNotice] = useState<{
@@ -114,48 +134,18 @@ export default function DashboardPage() {
     text: string;
   } | null>(null);
 
-  // Voice recording state for drawer
-  const [isListeningDrawer, setIsListeningDrawer] = useState<boolean>(false);
-  const drawerRecognitionRef = useRef<any>(null);
+  // Gemini AI Analysis state for the selected query
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
+  const [aiAdvice, setAiAdvice] = useState<AIAdviceResponse | null>(null);
+  const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
 
-  const startDrawerVoice = () => {
-    const win = typeof window !== "undefined" ? (window as any) : null;
-    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
-
-    if (SpeechRecognition) {
-      try {
-        const rec = new SpeechRecognition();
-        rec.continuous = false;
-        rec.interimResults = true;
-        rec.lang = language === "te" ? "te-IN" : "en-IN";
-
-        rec.onstart = () => setIsListeningDrawer(true);
-        rec.onresult = (event: any) => {
-          let str = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            str += event.results[i][0].transcript;
-          }
-          if (str) setNotes(str);
-        };
-        rec.onerror = () => setIsListeningDrawer(false);
-        rec.onend = () => setIsListeningDrawer(false);
-
-        drawerRecognitionRef.current = rec;
-        rec.start();
-        return;
-      } catch {}
-    }
-    alert("Voice input is not supported in this browser.");
-  };
-
-  const stopDrawerVoice = () => {
-    if (drawerRecognitionRef.current) {
-      try {
-        drawerRecognitionRef.current.stop();
-      } catch {}
-    }
-    setIsListeningDrawer(false);
-  };
+  // Senior Citizen Voice-to-Text Speech state
+  const [isListeningVoice, setIsListeningVoice] = useState<boolean>(false);
+  const [voiceStatusNotice, setVoiceStatusNotice] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
 
   // Helper for localized counter category label
   const getCategoryDeskName = (category: string, fallback: string) => {
@@ -215,6 +205,181 @@ export default function DashboardPage() {
     }
   }, [user]);
 
+  // When a service is selected, automatically analyze with Gemini AI
+  const handleSelectService = (service: BankingServiceType) => {
+    setSelectedService(service);
+    setDetailedExplanation("");
+    setAiAdvice(null);
+    setCheckedDocs({});
+    setVoiceStatusNotice(null);
+
+    // Automatically trigger initial AI evaluation for this service
+    fetchGeminiAdvice(service, "");
+
+    // Smooth scroll to drawer
+    setTimeout(() => {
+      drawerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  // Fetch Gemini AI Advice for the query + detailed explanation
+  const fetchGeminiAdvice = async (service: BankingServiceType, explanation: string) => {
+    setIsAnalyzingAI(true);
+    try {
+      const res = await fetch("/api/ai-advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceType: service,
+          queryText: explanation,
+          language: language === "te" ? "te" : "en",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAiAdvice(data.data);
+      }
+    } catch (err) {
+      console.error("AI Advisor evaluation failed:", err);
+    } finally {
+      setIsAnalyzingAI(false);
+    }
+  };
+
+  // Senior Citizen Voice-to-Text Input Handler
+  const startVoiceInput = () => {
+    setVoiceStatusNotice(null);
+
+    const win = typeof window !== "undefined" ? (window as any) : null;
+    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = language === "te" ? "te-IN" : "en-IN";
+
+        recognition.onstart = () => {
+          setIsListeningVoice(true);
+          setVoiceStatusNotice(t("listening"));
+        };
+
+        recognition.onresult = (event: any) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          if (transcript) {
+            setDetailedExplanation(transcript);
+            if (selectedService) {
+              fetchGeminiAdvice(selectedService, transcript);
+            }
+          }
+        };
+
+        recognition.onerror = () => {
+          setIsListeningVoice(false);
+          setVoiceStatusNotice(null);
+          startMediaRecorderVoice();
+        };
+
+        recognition.onend = () => {
+          setIsListeningVoice(false);
+          setVoiceStatusNotice(t("voice_converted"));
+          setTimeout(() => setVoiceStatusNotice(null), 3000);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        return;
+      } catch {}
+    }
+
+    startMediaRecorderVoice();
+  };
+
+  const startMediaRecorderVoice = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert("Microphone access is not supported in this browser.");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        setIsListeningVoice(false);
+        setVoiceStatusNotice(t("ai_analyzing"));
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = (reader.result as string).split(",")[1];
+          try {
+            const res = await fetch("/api/ai-transcribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                audioBase64: base64Audio,
+                mimeType: "audio/webm",
+                language: language === "te" ? "te" : "en",
+              }),
+            });
+            const data = await res.json();
+            if (data.success && data.text) {
+              setDetailedExplanation(data.text);
+              if (selectedService) {
+                fetchGeminiAdvice(selectedService, data.text);
+              }
+              setVoiceStatusNotice(t("voice_converted"));
+            } else {
+              setVoiceStatusNotice(null);
+            }
+          } catch {
+            setVoiceStatusNotice(null);
+          }
+        };
+
+        stream.getTracks().forEach((trk) => trk.stop());
+      };
+
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsListeningVoice(true);
+      setVoiceStatusNotice(t("listening"));
+
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+        }
+      }, 8000);
+    } catch {
+      setIsListeningVoice(false);
+      alert("Microphone permission denied. Please allow microphone access.");
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+    }
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsListeningVoice(false);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("bank_user");
     setUser(null);
@@ -242,7 +407,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           accountNumber: user.accountNumber,
           serviceType: selectedService,
-          notes,
+          notes: detailedExplanation,
         }),
       });
 
@@ -251,10 +416,11 @@ export default function DashboardPage() {
       if (res.ok && data.success) {
         setActiveToken(data.data);
         setSelectedService(null);
-        setNotes("");
+        setDetailedExplanation("");
+        setAiAdvice(null);
         setAlertNotice({
           type: "success",
-          text: `Queue Ticket ${data.data.tokenNumber} issued & assigned to ${data.data.assignedEmployeeName || "Officer"} at ${data.data.assignedDesk || "Counter"}.`,
+          text: `Queue Ticket ${data.data.tokenNumber} issued & mapped to ${data.data.assignedEmployeeName || "Officer"} at ${data.data.assignedDesk || "Counter"}.`,
         });
       } else {
         setAlertNotice({
@@ -698,13 +864,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Gemini AI Banking Advisor (Pre-screening & Document Checklist + Voice-to-Text) */}
-        <GeminiAdvisor
-          initialService={selectedService}
-          onSelectService={(srv) => setSelectedService(srv)}
-        />
-
-        {/* Section B: Service Type Selection Interface */}
+        {/* Section: Select Banking Service Query */}
         <section className="bg-white/90 backdrop-blur-xl border border-slate-300/80 rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
             <div>
@@ -723,7 +883,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 8 Services Grid */}
+          {/* 8 Banking Query Service Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {SERVICE_OPTIONS.map((serviceName) => {
               const meta = SERVICE_CATEGORY_MAP[serviceName];
@@ -734,7 +894,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={serviceName}
-                  onClick={() => setSelectedService(serviceName)}
+                  onClick={() => handleSelectService(serviceName)}
                   className={`rounded-xl p-3.5 border transition-all duration-150 cursor-pointer flex flex-col justify-between space-y-3 ${
                     isSelected
                       ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-blue-500/30"
@@ -791,13 +951,17 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Token Generation Drawer */}
+          {/* Interactive Detailed Explanation & Gemini AI Evaluation Drawer */}
           {selectedService && (
-            <div className="bg-slate-50/90 border border-slate-300 rounded-xl p-5 space-y-4">
+            <div
+              ref={drawerRef}
+              className="bg-slate-50/90 border border-slate-300 rounded-xl p-5 space-y-4 shadow-sm animate-fadeIn"
+            >
+              {/* Drawer Title Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center">
-                    {renderServiceIcon(SERVICE_CATEGORY_MAP[selectedService].iconId, 15)}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
+                    {renderServiceIcon(SERVICE_CATEGORY_MAP[selectedService].iconId, 16)}
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-xs sm:text-sm">
@@ -806,13 +970,17 @@ export default function DashboardPage() {
                     <p className="text-[11px] text-slate-500">
                       {t("assigned_to")}{" "}
                       <strong className="text-slate-800">
-                        {getCategoryDeskName(SERVICE_CATEGORY_MAP[selectedService].category, SERVICE_CATEGORY_MAP[selectedService].label)}
+                        {getCategoryDeskName(
+                          SERVICE_CATEGORY_MAP[selectedService].category,
+                          SERVICE_CATEGORY_MAP[selectedService].label
+                        )}
                       </strong>
                     </p>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setSelectedService(null)}
                   className="text-xs text-slate-500 hover:text-slate-800 self-end sm:self-center cursor-pointer"
                 >
@@ -820,35 +988,253 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleRequestToken} className="space-y-3.5">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-medium text-slate-700">
-                      {t("detailed_explanation")}
-                    </label>
-                    <button
-                      type="button"
-                      onClick={isListeningDrawer ? stopDrawerVoice : startDrawerVoice}
-                      className={`text-[10px] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 cursor-pointer transition ${
-                        isListeningDrawer
-                          ? "bg-rose-600 text-white animate-pulse"
-                          : "bg-slate-200 hover:bg-slate-300 text-slate-800"
-                      }`}
-                    >
-                      <MicrophoneIcon size={12} />
-                      <span>{isListeningDrawer ? t("stop_listening") : t("voice_input_btn")}</span>
-                    </button>
-                  </div>
-                  <textarea
-                    rows={2}
-                    placeholder={t("detailed_explanation_placeholder")}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-inner resize-none"
-                  />
+              {/* Detailed Explanation Text / Voice Input Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+                    {t("detailed_explanation")}
+                  </label>
+                  {/* Senior Citizen Voice Button */}
+                  <button
+                    type="button"
+                    onClick={isListeningVoice ? stopVoiceInput : startVoiceInput}
+                    title={t("senior_voice_helper")}
+                    className={`text-[11px] px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs ${
+                      isListeningVoice
+                        ? "bg-rose-600 text-white animate-pulse"
+                        : "bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300"
+                    }`}
+                  >
+                    <MicrophoneIcon size={13} className={isListeningVoice ? "animate-bounce" : "text-indigo-600"} />
+                    <span>{isListeningVoice ? t("stop_listening") : t("voice_input_btn")}</span>
+                  </button>
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-1">
+                {voiceStatusNotice && (
+                  <div className="p-2.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs flex items-center gap-2 animate-fadeIn">
+                    <div className="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></div>
+                    <span className="font-medium">{voiceStatusNotice}</span>
+                  </div>
+                )}
+
+                <textarea
+                  rows={2}
+                  placeholder={t("detailed_explanation_placeholder")}
+                  value={detailedExplanation}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDetailedExplanation(val);
+                    if (selectedService) {
+                      fetchGeminiAdvice(selectedService, val);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-inner resize-none"
+                />
+              </div>
+
+              {/* Gemini AI Automatic Analysis & Checklist Box */}
+              <div className="space-y-3 pt-1">
+                {isAnalyzingAI && (
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-center gap-2.5 text-xs text-slate-600">
+                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="font-medium">{t("ai_analyzing")}</span>
+                  </div>
+                )}
+
+                {aiAdvice && !isAnalyzingAI && (
+                  <div className="bg-white/90 border border-slate-300/80 rounded-xl p-4 sm:p-5 space-y-4 shadow-sm">
+                    {/* Gemini AI Header Badge */}
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <SparklesIcon size={15} className="text-indigo-600" />
+                        <span className="text-xs font-bold text-slate-900">
+                          {t("ai_advisor_title")}
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+                        Gemini 2.5 Flash
+                      </span>
+                    </div>
+
+                    {/* Verdict Banner (Mandatory Visit vs Digital Resolution) */}
+                    <div
+                      className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                        aiAdvice.requiresVisit
+                          ? "bg-amber-50 border-amber-300 text-amber-950"
+                          : "bg-emerald-50 border-emerald-300 text-emerald-950"
+                      }`}
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              aiAdvice.requiresVisit ? "bg-amber-600" : "bg-emerald-600"
+                            }`}
+                          ></span>
+                          <span className="font-bold text-xs sm:text-sm">
+                            {aiAdvice.visitVerdict}
+                          </span>
+                        </div>
+                        <p className="text-[11px] opacity-90 leading-relaxed pl-4">
+                          {aiAdvice.summary}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 font-mono text-[10px] self-start sm:self-center shrink-0">
+                        <span className="px-2 py-0.5 rounded-md bg-white/80 border border-black/10">
+                          ⏱ {aiAdvice.estimatedCounterMinutes} {t("mins")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Mapped Bank Officer & Counter Desk */}
+                    {(aiAdvice.mappedDepartment || aiAdvice.mappedEmployeeRole || aiAdvice.mappedDesk) && (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
+                            <UserIcon size={14} />
+                          </div>
+                          <div>
+                            <div className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">
+                              Assigned Officer & Counter
+                            </div>
+                            <div className="text-xs font-bold text-slate-900 flex items-center gap-2 mt-0.5">
+                              <span>{aiAdvice.mappedEmployeeRole}</span>
+                              {aiAdvice.mappedDesk && (
+                                <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200">
+                                  {aiAdvice.mappedDesk}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {aiAdvice.mappedDepartment && (
+                          <div className="text-[11px] font-medium text-slate-500 self-start sm:self-center">
+                            Dept: <strong className="text-slate-800">{aiAdvice.mappedDepartment}</strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* If Visit NOT Required: Step-by-Step Digital Alternatives */}
+                    {!aiAdvice.requiresVisit && aiAdvice.digitalAlternatives.length > 0 && (
+                      <div className="space-y-2 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+                        <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckIcon size={13} className="text-emerald-600" />
+                          <span>{t("ai_digital_alternatives")}</span>
+                        </h4>
+                        <ul className="space-y-1.5 text-xs text-slate-700 pl-1">
+                          {aiAdvice.digitalAlternatives.map((alt, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-[11px] leading-relaxed">
+                              <span className="text-emerald-700 font-bold mt-0.5">→</span>
+                              <span>{alt}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Aligned Document & Certificate Checklist */}
+                    {aiAdvice.requiredDocuments && aiAdvice.requiredDocuments.length > 0 && (
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                            📋 {t("ai_required_documents")}
+                          </h4>
+                          <span className="text-[10px] text-slate-400">
+                            {Object.values(checkedDocs).filter(Boolean).length} / {aiAdvice.requiredDocuments.length} ready
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {aiAdvice.requiredDocuments.map((doc, idx) => {
+                            const isChecked = checkedDocs[doc.name];
+                            return (
+                              <div
+                                key={idx}
+                                onClick={() =>
+                                  setCheckedDocs((prev) => ({
+                                    ...prev,
+                                    [doc.name]: !prev[doc.name],
+                                  }))
+                                }
+                                className={`p-2.5 rounded-xl border transition cursor-pointer flex items-start gap-2 ${
+                                  isChecked
+                                    ? "bg-emerald-50/70 border-emerald-300"
+                                    : "bg-slate-50/70 border-slate-200 hover:border-slate-300"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!isChecked}
+                                  onChange={() => {}}
+                                  className="mt-0.5 rounded text-blue-600 focus:ring-blue-500 pointer-events-none"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span
+                                      className={`text-xs font-semibold ${
+                                        isChecked ? "line-through text-slate-500" : "text-slate-900"
+                                      }`}
+                                    >
+                                      {doc.name}
+                                    </span>
+                                    <span
+                                      className={`text-[8px] px-1.5 py-0.5 rounded font-mono font-medium ${
+                                        doc.isMandatory
+                                          ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                                      }`}
+                                    >
+                                      {doc.isMandatory ? t("ai_mandatory") : t("ai_optional")}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                                    {doc.description}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Prerequisites & Best Visiting Time */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start pt-1">
+                      {aiAdvice.prerequisites && aiAdvice.prerequisites.length > 0 && (
+                        <div className="md:col-span-8 space-y-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                          <h4 className="text-[9px] font-bold text-slate-700 uppercase tracking-wider">
+                            ⚠️ {t("ai_prerequisites")}
+                          </h4>
+                          <ul className="space-y-1 text-[10px] text-slate-600 pl-1">
+                            {aiAdvice.prerequisites.map((pre, idx) => (
+                              <li key={idx} className="flex items-start gap-1.5">
+                                <span className="text-slate-400">•</span>
+                                <span>{pre}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="md:col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-0.5">
+                        <div className="text-[9px] font-bold text-slate-700 uppercase tracking-wider">
+                          ⏳ {t("ai_best_time")}
+                        </div>
+                        <div className="text-[11px] font-semibold text-slate-900 font-mono">
+                          {aiAdvice.bestTimeToVisit}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Form Action Buttons */}
+              <form onSubmit={handleRequestToken} className="pt-2">
+                <div className="flex items-center justify-end gap-2.5">
                   <button
                     type="button"
                     onClick={() => setSelectedService(null)}
@@ -859,7 +1245,7 @@ export default function DashboardPage() {
                   <button
                     type="submit"
                     disabled={isSubmittingToken}
-                    className="px-4 py-1.5 bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black text-white rounded-xl text-xs font-medium shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 border border-slate-900/50"
+                    className="px-5 py-2 bg-gradient-to-b from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 active:from-black text-white rounded-xl text-xs font-medium shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 border border-slate-900/50"
                   >
                     {isSubmittingToken
                       ? t("generating_token")
