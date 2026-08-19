@@ -6,7 +6,6 @@ import {
   MicrophoneIcon,
   SpeakerIcon,
   SparklesIcon,
-  CheckIcon,
 } from "@/components/BankIcons";
 
 export default function VoiceBotWidget() {
@@ -18,10 +17,10 @@ export default function VoiceBotWidget() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>("");
-  const [responseTitle, setResponseTitle] = useState<string>("");
   const [responseText, setResponseText] = useState<string>("");
   const [statusMessage, setStatusMessage] = useState<string>("");
 
+  const liveTranscriptRef = useRef<string>("");
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -55,12 +54,19 @@ export default function VoiceBotWidget() {
     if (!text || !text.trim()) return;
     stopAudio();
 
+    // Clean markdown symbols for natural speech synthesis
+    const cleanSpeechText = text
+      .replace(/[*#_`]/g, "")
+      .replace(/•/g, "")
+      .replace(/\n+/g, " ")
+      .trim();
+
     try {
       const res = await fetch("/api/ai-speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: text.trim(),
+          text: cleanSpeechText.slice(0, 500),
           language: isTelugu ? "te" : "en",
         }),
       });
@@ -80,7 +86,7 @@ export default function VoiceBotWidget() {
 
         await audio.play();
       } else if (typeof window !== "undefined" && window.speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance(text);
+        const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
         utterance.lang = isTelugu ? "te-IN" : "en-IN";
         utterance.onstart = () => setIsPlayingAudio(true);
         utterance.onend = () => setIsPlayingAudio(false);
@@ -93,14 +99,60 @@ export default function VoiceBotWidget() {
     }
   };
 
+  const processQueryResponse = async (queryText: string) => {
+    const cleanQuery = queryText.trim();
+    if (!cleanQuery) {
+      setStatusMessage(
+        isTelugu
+          ? "వాయిస్ వినపడలేదు. దయచేసి మళ్ళీ స్పష్టంగా మాట్లాడండి."
+          : "Could not detect speech. Please try speaking clearly."
+      );
+      setIsProcessing(false);
+      return;
+    }
+
+    setTranscript(cleanQuery);
+    setIsProcessing(true);
+    setStatusMessage(isTelugu ? "AI సమాధానం సిద్ధం చేస్తోంది..." : "AI generating accurate response...");
+
+    try {
+      const chatRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", text: cleanQuery }],
+          language: isTelugu ? "te" : "en",
+        }),
+      });
+
+      const chatData = await chatRes.json();
+      const answer =
+        chatData.reply ||
+        (isTelugu
+          ? "మీ ప్రశ్నకు సమాధానం దొరకలేదు. దయచేసి బ్రాంచ్ కౌంటర్‌ను సంప్రదించండి."
+          : "Could not find answer for this inquiry. Please consult the branch counter.");
+
+      setResponseText(answer);
+      setStatusMessage("");
+      setIsProcessing(false);
+
+      // Speak back the answer immediately
+      playVoiceResponse(answer);
+    } catch (err) {
+      console.error("Voice bot query processing error:", err);
+      setStatusMessage(isTelugu ? "ప్రాసెసింగ్ లోపం జరిగింది." : "Error generating response.");
+      setIsProcessing(false);
+    }
+  };
+
   const startVoiceCapture = async () => {
     stopAudio();
     setTranscript("");
-    setResponseTitle("");
     setResponseText("");
+    liveTranscriptRef.current = "";
     setStatusMessage(isTelugu ? "వింటోంది... మాట్లాడండి" : "Listening... Please speak your question");
 
-    // 1. Live browser recognition for immediate visual feedback
+    // 1. Live browser SpeechRecognition for instant transcription capture
     const win = typeof window !== "undefined" ? (window as any) : null;
     const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -115,11 +167,17 @@ export default function VoiceBotWidget() {
           for (let i = event.resultIndex; i < event.results.length; i++) {
             live += event.results[i][0].transcript;
           }
-          if (live) setTranscript(live);
+          if (live) {
+            liveTranscriptRef.current = live;
+            setTranscript(live);
+          }
         };
+
         recognitionRef.current = recognition;
         recognition.start();
-      } catch {}
+      } catch (err) {
+        console.warn("Speech recognition initialization:", err);
+      }
     }
 
     // 2. High-fidelity audio recording for Sarvam AI STT
@@ -152,15 +210,18 @@ export default function VoiceBotWidget() {
       mediaRecorder.onstop = async () => {
         setIsRecording(false);
         setIsProcessing(true);
-        setStatusMessage(isTelugu ? "Sarvam AI ప్రాసెస్ చేస్తోంది..." : "Sarvam AI processing audio...");
+        setStatusMessage(isTelugu ? "Sarvam AI పరిశీలిస్తోంది..." : "Transcribing with Sarvam AI...");
+
+        const currentLiveTranscript = liveTranscriptRef.current.trim();
 
         const audioBlob = new Blob(audioChunksRef.current, { type: selectedMime });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
           const base64Audio = (reader.result as string).split(",")[1];
+          let finalTranscription = currentLiveTranscript;
+
           try {
-            // 1. Transcribe with Sarvam AI STT
             const sttRes = await fetch("/api/ai-transcribe", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -171,40 +232,15 @@ export default function VoiceBotWidget() {
               }),
             });
             const sttData = await sttRes.json();
-            const transcribedText = sttData.text || transcript;
-
-            if (transcribedText) {
-              setTranscript(transcribedText);
-              setStatusMessage(isTelugu ? "సలహా సిద్ధం చేస్తోంది..." : "Preparing voice advice...");
-
-              // 2. Query Banking Advisor
-              const adviceRes = await fetch("/api/ai-advisor", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  serviceType: "General Enquiry",
-                  queryText: transcribedText,
-                  language: isTelugu ? "te" : "en",
-                }),
-              });
-              const adviceData = await adviceRes.json();
-              if (adviceData.success && adviceData.data) {
-                const title = adviceData.data.visitVerdict || (isTelugu ? "బ్యాంకింగ్ సలహా" : "Banking Advice");
-                const summary = adviceData.data.spokenSummary || adviceData.data.summary || "";
-                setResponseTitle(title);
-                setResponseText(summary);
-                setStatusMessage("");
-                playVoiceResponse(summary);
-              }
-            } else {
-              setStatusMessage(isTelugu ? "వాయిస్ వినపడలేదు. మళ్ళీ ప్రయత్నించండి." : "Could not hear audio. Please try speaking again.");
+            if (sttData.success && sttData.text && sttData.text.trim()) {
+              finalTranscription = sttData.text.trim();
             }
-          } catch (err) {
-            console.error("Voice bot workflow error:", err);
-            setStatusMessage(isTelugu ? "ప్రాసెసింగ్ లోపం. దయచేసి మళ్ళీ ప్రయత్నించండి." : "Processing error. Please try again.");
-          } finally {
-            setIsProcessing(false);
+          } catch (sttErr) {
+            console.warn("Sarvam STT failed, using live recognition text:", sttErr);
           }
+
+          // Process the transcribed user speech and generate accurate response
+          await processQueryResponse(finalTranscription || currentLiveTranscript);
         };
 
         stream.getTracks().forEach((trk) => trk.stop());
@@ -214,11 +250,12 @@ export default function VoiceBotWidget() {
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
 
+      // Auto-stop after 8 seconds of speech recording
       setTimeout(() => {
         if (mediaRecorder.state === "recording") {
           mediaRecorder.stop();
         }
-      }, 7000);
+      }, 8000);
     } catch {
       setIsRecording(false);
       alert("Microphone permission was denied. Please allow microphone access to talk to the Voice Bot.");
@@ -237,58 +274,25 @@ export default function VoiceBotWidget() {
     setIsRecording(false);
   };
 
-  const handleQuickQuestion = (qText: string) => {
-    setTranscript(qText);
-    setIsProcessing(true);
-    setStatusMessage(isTelugu ? "సలహా పరిశీలిస్తోంది..." : "Checking banking advice...");
-
-    fetch("/api/ai-advisor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        serviceType: "General Enquiry",
-        queryText: qText,
-        language: isTelugu ? "te" : "en",
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          const title = data.data.visitVerdict || (isTelugu ? "బ్యాంకింగ్ సలహా" : "Banking Advice");
-          const summary = data.data.spokenSummary || data.data.summary || "";
-          setResponseTitle(title);
-          setResponseText(summary);
-          setStatusMessage("");
-          playVoiceResponse(summary);
-        }
-      })
-      .catch(() => {
-        setStatusMessage(isTelugu ? "లోపం జరిగింది" : "Error fetching advice");
-      })
-      .finally(() => {
-        setIsProcessing(false);
-      });
-  };
-
   const sampleQuestions = isTelugu
     ? [
-        "KYC కోసం బ్రాంచ్‌కు వెళ్ళాలా?",
-        "గోల్డ్ లోన్ కోసం ఏ డాక్యుమెంట్లు కావాలి?",
-        "బ్యాంకు పని వేళలు ఏమిటి?",
-        "ATM పిన్ ఎలా సెట్ చేయాలి?",
+        "KYC అప్‌డేట్ కోసం ఏ డాక్యుమెంట్లు కావాలి?",
+        "గోల్డ్ లోన్ మరియు పర్సనల్ లోన్ వివరాలు ఏమిటి?",
+        "బ్యాంకు పని వేళలు & స్లాట్లు ఎప్పుడు ఉంటాయి?",
+        "పోగొట్టుకున్న ATM కార్డును ఎలా బ్లాక్ చేయాలి?",
       ]
     : [
-        "Is branch visit mandatory for KYC?",
-        "What documents needed for a gold loan?",
-        "What are the branch operating hours?",
-        "How to generate new ATM debit PIN?",
+        "What documents are required for KYC update?",
+        "How to apply for a personal loan?",
+        "What are the branch working hours & time slots?",
+        "How do I block a lost ATM card?",
       ];
 
   return (
     <div className="fixed bottom-6 left-6 z-40 font-sans">
       {/* Expanded Voice Modal */}
       {isOpen ? (
-        <div className="w-[340px] sm:w-[380px] bg-white border border-gray-900 rounded-xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 animate-in fade-in slide-in-from-bottom-3">
+        <div className="w-[340px] sm:w-[400px] bg-white border border-gray-900 rounded-xl shadow-2xl overflow-hidden flex flex-col transition-all duration-200 animate-in fade-in slide-in-from-bottom-3">
           {/* Header */}
           <div className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -318,9 +322,9 @@ export default function VoiceBotWidget() {
           </div>
 
           {/* Body */}
-          <div className="p-4 space-y-4 max-h-[460px] overflow-y-auto">
+          <div className="p-4 space-y-3.5 max-h-[480px] overflow-y-auto">
             {/* Interactive Microphone Button */}
-            <div className="flex flex-col items-center justify-center py-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+            <div className="flex flex-col items-center justify-center py-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
               <button
                 type="button"
                 onClick={isRecording ? stopVoiceCapture : startVoiceCapture}
@@ -340,18 +344,18 @@ export default function VoiceBotWidget() {
                 <span className="text-xs font-semibold text-gray-900 block">
                   {isRecording
                     ? isTelugu
-                      ? "మాట్లాడుతున్నారు... పూర్తయ్యాక నొక్కండి"
-                      : "Listening... Tap to stop"
+                      ? "మాట్లాడుతున్నారు... పూర్తయ్యాక ఇక్కడ నొక్కండి"
+                      : "Listening... Tap button when done"
                     : isProcessing
                     ? isTelugu
-                      ? "ప్రాసెస్ అవుతోంది..."
-                      : "Processing voice..."
+                      ? "సమాధానం పరిశీలిస్తోంది..."
+                      : "Analyzing question..."
                     : isTelugu
-                    ? "తెలుగు లేదా English లో మాట్లాడండి"
-                    : "Tap & Speak in Telugu or English"}
+                    ? "నొక్కి మాట్లాడండి (తెలుగు / English)"
+                    : "Tap to Speak (Telugu / English)"}
                 </span>
                 <span className="text-[10px] text-gray-500">
-                  {isTelugu ? "సహజమైన వాయిస్ ద్వారా సమాధానం వినండి" : "Voice question converted instantly"}
+                  {isTelugu ? "స్పష్టమైన వాయిస్ ద్వారా ఖచ్చితమైన సమాధానం పొందండి" : "Speak naturally for instant voice response"}
                 </span>
               </div>
             </div>
@@ -364,7 +368,7 @@ export default function VoiceBotWidget() {
               </div>
             )}
 
-            {/* Transcribed User Question */}
+            {/* Transcribed User Speech */}
             {transcript && (
               <div className="p-2.5 rounded bg-gray-100 border border-gray-200 text-xs space-y-1">
                 <div className="text-[10px] uppercase font-mono font-semibold text-gray-500">
@@ -374,39 +378,39 @@ export default function VoiceBotWidget() {
               </div>
             )}
 
-            {/* AI Response Card */}
+            {/* Response Display with Speech Control */}
             {responseText && (
               <div className="p-3.5 rounded-lg bg-green-50 border border-green-200 text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-green-900 font-semibold text-xs">
                     <SparklesIcon size={14} className="text-green-700" />
-                    <span>{responseTitle || (isTelugu ? "AI వాయిస్ సమాధానం" : "AI Voice Advice")}</span>
+                    <span>{isTelugu ? "AI సమాధానం" : "AI Voice Response"}</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => (isPlayingAudio ? stopAudio() : playVoiceResponse(responseText))}
-                    className="px-2 py-0.5 rounded bg-white text-green-900 border border-green-300 text-[11px] font-medium flex items-center gap-1 hover:bg-green-100 cursor-pointer"
+                    className="px-2.5 py-1 rounded bg-white text-green-900 border border-green-300 text-[11px] font-medium flex items-center gap-1 hover:bg-green-100 cursor-pointer shadow-2xs"
                   >
                     <SpeakerIcon size={11} className={isPlayingAudio ? "animate-pulse text-green-600" : ""} />
-                    <span>{isPlayingAudio ? (isTelugu ? "ఆపండి" : "Stop") : (isTelugu ? "🔊 మళ్ళీ వినండి" : "🔊 Listen")}</span>
+                    <span>{isPlayingAudio ? (isTelugu ? "⏹️ ఆపండి" : "⏹️ Stop") : (isTelugu ? "🔊 మళ్ళీ వినండి" : "🔊 Listen")}</span>
                   </button>
                 </div>
 
-                <p className="text-green-950 text-[11px] leading-relaxed">
+                <div className="text-green-950 text-[11px] leading-relaxed whitespace-pre-wrap">
                   {responseText}
-                </p>
+                </div>
 
-                {/* Animated Waveform when playing */}
+                {/* Animated Waveform when playing audio */}
                 {isPlayingAudio && (
-                  <div className="flex items-center gap-1 pt-1 justify-center">
+                  <div className="flex items-center gap-1 pt-1 justify-center border-t border-green-200">
                     <span className="w-1 h-3 bg-green-600 animate-pulse"></span>
                     <span className="w-1 h-5 bg-green-600 animate-bounce"></span>
                     <span className="w-1 h-4 bg-green-600 animate-pulse"></span>
                     <span className="w-1 h-6 bg-green-600 animate-bounce"></span>
                     <span className="w-1 h-3 bg-green-600 animate-pulse"></span>
-                    <span className="text-[10px] text-green-800 font-mono ml-1">
-                      {isTelugu ? "వాయిస్ వినబడుతోంది..." : "Speaking response aloud..."}
+                    <span className="text-[10px] text-green-800 font-mono ml-1.5 font-medium">
+                      {isTelugu ? "వాయిస్ సమాధానం వినబడుతోంది..." : "Speaking response aloud..."}
                     </span>
                   </div>
                 )}
@@ -416,14 +420,14 @@ export default function VoiceBotWidget() {
             {/* Quick Sample Questions */}
             <div className="space-y-1.5 pt-1">
               <span className="text-[10px] uppercase font-mono font-semibold text-gray-500 block">
-                {isTelugu ? "త్వరిత వాయిస్ ప్రశ్నలు:" : "Quick Questions to Tap:"}
+                {isTelugu ? "త్వరిత ప్రశ్నలు (నొక్కి వినండి):" : "Quick Sample Questions (Tap to Ask):"}
               </span>
               <div className="grid grid-cols-1 gap-1.5">
                 {sampleQuestions.map((q, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => handleQuickQuestion(q)}
+                    onClick={() => processQueryResponse(q)}
                     className="text-left px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-800 rounded border border-gray-200 text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <span className="truncate">{q}</span>
@@ -435,7 +439,7 @@ export default function VoiceBotWidget() {
           </div>
         </div>
       ) : (
-        /* Floating Left Badge / Docked Button */
+        /* Floating Left Badge */
         <button
           type="button"
           onClick={() => {
