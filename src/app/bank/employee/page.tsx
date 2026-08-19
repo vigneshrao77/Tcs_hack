@@ -107,6 +107,22 @@ function EmployeeTerminal() {
   const [activeTab, setActiveTab] = useState<"all" | "waiting" | "serving" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [updatingTokenId, setUpdatingTokenId] = useState<string | null>(null);
+  const [aiOptimizationResult, setAiOptimizationResult] = useState<{
+    lagDetected: boolean;
+    delayMinutes: number;
+    decisionType: string;
+    summary: string;
+    reassignedCount: number;
+    reassignedTokens: Array<{
+      tokenNumber: string;
+      customerName: string;
+      action: string;
+      targetDesk?: string;
+      targetBranch?: string;
+      distanceKm?: number;
+      reason: string;
+    }>;
+  } | null>(null);
 
   // Load stored employee session on mount
   useEffect(() => {
@@ -245,11 +261,15 @@ function EmployeeTerminal() {
             ? "CALLED TO DESK 📢"
             : newStatus.toUpperCase();
 
+        if (data.aiOptimization) {
+          setAiOptimizationResult(data.aiOptimization);
+        }
+
         setActionAlert({
           type: "success",
           text: `${tokenLabel}: Status changed to ${statusText}`,
         });
-        setTimeout(() => setActionAlert(null), 3500);
+        setTimeout(() => setActionAlert(null), 4000);
         await fetchEmployeeQueue();
       } else {
         alert(data.error || "Failed to update token");
@@ -506,6 +526,72 @@ function EmployeeTerminal() {
             >
               ✕
             </button>
+          </div>
+        )}
+
+        {/* AI Smart Queue Lag Optimizer Real-Time Report Banner */}
+        {aiOptimizationResult && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs text-blue-950 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🤖</span>
+                <strong className="font-semibold text-blue-900 text-xs">
+                  AI Smart Load Balancer & Lag Dispatch Engine
+                </strong>
+                <span
+                  className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase ${
+                    aiOptimizationResult.lagDetected
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
+                      : "bg-green-100 text-green-900 border border-green-300"
+                  }`}
+                >
+                  {aiOptimizationResult.lagDetected
+                    ? `⚠️ Lag Detected (${aiOptimizationResult.delayMinutes}m delay)`
+                    : "✓ On Schedule"}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAiOptimizationResult(null)}
+                className="text-blue-600 hover:text-blue-900 font-bold cursor-pointer text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-[11px] text-blue-900 leading-relaxed font-medium">
+              {aiOptimizationResult.summary}
+            </p>
+
+            {aiOptimizationResult.reassignedTokens && aiOptimizationResult.reassignedTokens.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] uppercase font-mono font-semibold text-blue-700 block">
+                  AI Action Breakdown ({aiOptimizationResult.reassignedTokens.length} tokens):
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {aiOptimizationResult.reassignedTokens.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 bg-white rounded border border-blue-200 text-[11px] space-y-0.5"
+                    >
+                      <div className="flex items-center justify-between font-mono">
+                        <strong className="text-gray-900">{item.tokenNumber}</strong>
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-blue-100 text-blue-800 font-bold uppercase">
+                          {item.action === "reassign_desk"
+                            ? `➡️ Reassigned: ${item.targetDesk}`
+                            : item.action === "reroute_branch"
+                            ? `📍 Reroute: ${item.targetBranch} (${item.distanceKm} km)`
+                            : "⏱️ Rescheduled"}
+                        </span>
+                      </div>
+                      <div className="text-gray-700 text-[10px]">{item.customerName}</div>
+                      <div className="text-[10px] text-gray-500 italic">{item.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

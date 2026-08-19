@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import ServiceToken from "@/models/ServiceToken";
 import { checkRateLimit, getClientIp } from "@/lib/security";
+import { checkLagAndOptimizeQueue } from "@/lib/aiQueueOptimizer";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -37,10 +38,23 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
     await token.save();
 
+    let aiOptimization = null;
+    if (status === "completed") {
+      try {
+        aiOptimization = await checkLagAndOptimizeQueue(
+          token._id.toString(),
+          assignedEmployeeId || token.assignedEmployeeId
+        );
+      } catch (optErr) {
+        console.warn("AI lag optimization non-blocking warning:", optErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `Token ${token.tokenNumber} updated to status: ${token.status}`,
       data: token,
+      aiOptimization,
     });
   } catch (error: unknown) {
     console.error("Token update error:", error);

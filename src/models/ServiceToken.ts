@@ -32,6 +32,12 @@ export interface IServiceToken extends Document {
   timeSlot?: string;
   slotDate?: string;
   operatingHours?: string;
+  delayMinutes?: number;
+  isRerouted?: boolean;
+  reassignedBranchCode?: string;
+  reassignedBranchName?: string;
+  reassignedDesk?: string;
+  aiRerouteAdvice?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -154,6 +160,26 @@ const ServiceTokenSchema: Schema<IServiceToken> = new Schema(
     notes: {
       type: String,
       trim: true,
+    },
+    delayMinutes: {
+      type: Number,
+      default: 0,
+    },
+    isRerouted: {
+      type: Boolean,
+      default: false,
+    },
+    reassignedBranchCode: {
+      type: String,
+    },
+    reassignedBranchName: {
+      type: String,
+    },
+    reassignedDesk: {
+      type: String,
+    },
+    aiRerouteAdvice: {
+      type: String,
     },
   },
   {

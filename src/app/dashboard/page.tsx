@@ -58,6 +58,11 @@ interface ServiceTokenData {
   timeSlot?: string;
   slotDate?: string;
   operatingHours?: string;
+  isRerouted?: boolean;
+  reassignedDesk?: string;
+  reassignedBranchCode?: string;
+  reassignedBranchName?: string;
+  aiRerouteAdvice?: string;
   createdAt: string;
 }
 
@@ -859,6 +864,27 @@ export default function DashboardPage() {
                 {t("cancel_ticket")}
               </button>
             </div>
+
+            {/* AI Smart Queue Optimization Notice (if rebalanced or rerouted) */}
+            {activeToken.isRerouted && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-xs text-blue-950 flex items-start gap-2.5">
+                <SparklesIcon size={16} className="text-blue-700 mt-0.5 shrink-0" />
+                <div className="space-y-0.5">
+                  <span className="font-semibold text-xs text-blue-900 block">
+                    🤖 AI Smart Queue Load Balancer Update
+                  </span>
+                  <p className="text-[11px] text-blue-800 leading-relaxed">
+                    {activeToken.aiRerouteAdvice ||
+                      `Your token has been automatically transferred to ${activeToken.assignedDesk} to avoid counter delay.`}
+                  </p>
+                  {activeToken.reassignedBranchName && (
+                    <div className="text-[10px] font-mono text-blue-900 pt-0.5">
+                      Nearest Branch Alternative: <strong>{activeToken.reassignedBranchName}</strong> ({activeToken.reassignedBranchCode})
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Mandatory In-Branch Visit Time Slot Banner (09:00 AM - 05:00 PM) */}
             <div className="bg-gray-50 border border-gray-300 rounded-md p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
