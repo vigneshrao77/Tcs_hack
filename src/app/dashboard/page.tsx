@@ -247,56 +247,8 @@ export default function DashboardPage() {
     }
   };
 
-  // Senior Citizen Voice-to-Text Input Handler
+  // Senior Citizen Voice-to-Text Input Handler using Sarvam AI STT
   const startVoiceInput = () => {
-    setVoiceStatusNotice(null);
-
-    const win = typeof window !== "undefined" ? (window as any) : null;
-    const SpeechRecognition = win?.SpeechRecognition || win?.webkitSpeechRecognition;
-
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = language === "te" ? "te-IN" : "en-IN";
-
-        recognition.onstart = () => {
-          setIsListeningVoice(true);
-          setVoiceStatusNotice(t("listening"));
-        };
-
-        recognition.onresult = (event: any) => {
-          let transcript = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-          }
-          if (transcript) {
-            setDetailedExplanation(transcript);
-            if (selectedService) {
-              fetchGeminiAdvice(selectedService, transcript);
-            }
-          }
-        };
-
-        recognition.onerror = () => {
-          setIsListeningVoice(false);
-          setVoiceStatusNotice(null);
-          startMediaRecorderVoice();
-        };
-
-        recognition.onend = () => {
-          setIsListeningVoice(false);
-          setVoiceStatusNotice(t("voice_converted"));
-          setTimeout(() => setVoiceStatusNotice(null), 3000);
-        };
-
-        recognitionRef.current = recognition;
-        recognition.start();
-        return;
-      } catch {}
-    }
-
     startMediaRecorderVoice();
   };
 
