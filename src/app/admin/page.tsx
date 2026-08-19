@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { SelectedLocation } from "@/components/LocationPicker";
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 // Dynamic import with SSR disabled to prevent Leaflet window reference errors during SSR
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
@@ -43,6 +45,8 @@ interface BankBranch {
 }
 
 export default function AdminPage() {
+  const { t } = useLanguage();
+
   const [branches, setBranches] = useState<BankBranch[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -181,7 +185,7 @@ export default function AdminPage() {
           type: "success",
           text: editingBranchId
             ? `Branch "${bankName}" updated successfully!`
-            : `Branch "${bankName}" (${bankCode.toUpperCase()}) registered successfully with OpenStreetMap coordinates!`,
+            : `Branch "${bankName}" (${bankCode.toUpperCase()}) registered successfully!`,
         });
         resetForm();
         setShowForm(false);
@@ -253,27 +257,36 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
-      {/* Top Navigation */}
+      {/* Top Navigation with Language Switcher */}
       <nav className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏦</span>
             <div>
               <span className="text-base font-bold text-white tracking-wide">
-                Bank Admin Portal
+                {t("admin_portal")}
               </span>
               <span className="hidden sm:inline-block ml-2 text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                Network & Branch Setup
+                {t("network_setup")}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             <Link
-              href="/"
-              className="text-xs font-medium text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-950 transition"
+              href="/register"
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition hidden sm:flex items-center gap-1"
             >
-              ← System Overview
+              <span>👤 {t("register_user")}</span>
+            </Link>
+            <Link
+              href="/login"
+              className="text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-950 transition hidden sm:inline-block"
+            >
+              {t("customer_signin")}
             </Link>
             <button
               onClick={() => {
@@ -284,9 +297,9 @@ export default function AdminPage() {
                   setShowForm(true);
                 }
               }}
-              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs transition shadow flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs transition shadow flex items-center gap-1.5 cursor-pointer"
             >
-              <span>{showForm ? "✕ Close Form" : "＋ Register Branch"}</span>
+              <span>{showForm ? t("close_form_btn") : t("register_branch_btn")}</span>
             </button>
           </div>
         </div>
@@ -319,49 +332,49 @@ export default function AdminPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
             <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
-              Total Branches
+              {t("total_branches")}
             </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
               {totalBranchesCount}
             </div>
             <div className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-              <span>●</span> Registered in DB
+              <span>●</span> MongoDB Active
             </div>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
             <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
-              Total Staff Deployed
+              {t("total_staff")}
             </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
               {totalStaffCount}
             </div>
             <div className="text-[11px] text-indigo-400 mt-1">
-              Across 5 specializations
+              {t("staff_breakdown")}
             </div>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
             <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
-              Cash Counters
+              {t("cash_counters_stat")}
             </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
               {totalCashCounters}
             </div>
             <div className="text-[11px] text-amber-400 mt-1">
-              Active cash service desks
+              {t("cash_label")}
             </div>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
             <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
-              Account & KYC Officers
+              {t("kyc_officers_stat")}
             </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
               {totalKycStaff}
             </div>
             <div className="text-[11px] text-cyan-400 mt-1">
-              Onboarding & compliance
+              {t("kyc_label")}
             </div>
           </div>
         </div>
@@ -374,17 +387,14 @@ export default function AdminPage() {
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <span>🏛️</span>
                   {editingBranchId
-                    ? `Edit Branch: ${bankName}`
-                    : "Register New Bank Branch"}
+                    ? `${t("edit_branch_title")}: ${bankName}`
+                    : t("reg_branch_title")}
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Configure branch details, select precise location with OpenStreetMap, and assign category quotas.
-                </p>
               </div>
               <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
-                <span className="text-slate-400">Total Assigned Staff:</span>
+                <span className="text-slate-400">{t("assigned_staff")}</span>
                 <span className="font-bold text-emerald-400 text-sm">
-                  {formTotalStaff} Employees
+                  {formTotalStaff} {t("employees_count")}
                 </span>
               </div>
             </div>
@@ -393,12 +403,12 @@ export default function AdminPage() {
               {/* Section 1: Basic Information */}
               <div>
                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                  1. Branch Core Details
+                  1. {t("branch_name")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Bank / Branch Name *
+                      {t("branch_name")}
                     </label>
                     <input
                       type="text"
@@ -412,7 +422,7 @@ export default function AdminPage() {
 
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Bank Code (Unique) *
+                      {t("bank_code_unique")}
                     </label>
                     <input
                       type="text"
@@ -426,12 +436,12 @@ export default function AdminPage() {
 
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Branch Phone Number *
+                      {t("branch_phone")}
                     </label>
                     <input
                       type="tel"
                       required
-                      placeholder="e.g. +1 (555) 234-5678"
+                      placeholder="e.g. +91 98765 43210"
                       value={bankPhone}
                       onChange={(e) => setBankPhone(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs sm:text-sm"
@@ -444,11 +454,8 @@ export default function AdminPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🗺️</span> 2. Location Selection (OpenStreetMap API & Interactive Map)
+                    <span>🗺️</span> {t("location_selection")}
                   </h3>
-                  <span className="text-[11px] text-emerald-400">
-                    Search, Click Map or Use GPS
-                  </span>
                 </div>
 
                 <LocationPicker
@@ -462,11 +469,8 @@ export default function AdminPage() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    3. Employees by Department / Category
+                    {t("emp_by_dept")}
                   </h3>
-                  <span className="text-[11px] text-slate-400">
-                    Managers have a default minimum of 1
-                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -479,10 +483,7 @@ export default function AdminPage() {
                           Min 1
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">1) Managers</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Branch supervision & escalations
-                      </p>
+                      <h4 className="text-xs font-bold text-white mt-2">{t("mgr_label")}</h4>
                     </div>
 
                     <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
@@ -516,10 +517,7 @@ export default function AdminPage() {
                           Cash
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">2) Cash Counters</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Deposits, withdrawals & forex
-                      </p>
+                      <h4 className="text-xs font-bold text-white mt-2">{t("cash_label")}</h4>
                     </div>
 
                     <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
@@ -553,10 +551,7 @@ export default function AdminPage() {
                           Credit
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">3) Loan Officers</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Mortgage, personal & SME loans
-                      </p>
+                      <h4 className="text-xs font-bold text-white mt-2">{t("loan_label")}</h4>
                     </div>
 
                     <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
@@ -590,10 +585,7 @@ export default function AdminPage() {
                           Helpdesk
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">4) Customer Service</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Cards, disputes & general queries
-                      </p>
+                      <h4 className="text-xs font-bold text-white mt-2">{t("cust_svc_label")}</h4>
                     </div>
 
                     <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
@@ -627,10 +619,7 @@ export default function AdminPage() {
                           Onboard
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">5) Account & KYC</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        New accounts & document verification
-                      </p>
+                      <h4 className="text-xs font-bold text-white mt-2">{t("kyc_label")}</h4>
                     </div>
 
                     <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
@@ -667,7 +656,7 @@ export default function AdminPage() {
                   }}
                   className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition cursor-pointer"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -675,10 +664,10 @@ export default function AdminPage() {
                   className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs transition shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting
-                    ? "Saving to Database..."
+                    ? t("loading")
                     : editingBranchId
-                    ? "Update Branch Details"
-                    : "Register Branch into Database"}
+                    ? t("update_branch_btn")
+                    : t("save_branch_btn")}
                 </button>
               </div>
             </form>
@@ -691,7 +680,7 @@ export default function AdminPage() {
             <div className="relative flex-1">
               <input
                 type="text"
-                placeholder="Search by Bank Name, Code (e.g. BNK-01), Location or Phone..."
+                placeholder={t("search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs"
@@ -704,7 +693,7 @@ export default function AdminPage() {
               type="submit"
               className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
             >
-              Search
+              {t("search")}
             </button>
             {searchQuery && (
               <button
@@ -715,14 +704,13 @@ export default function AdminPage() {
                 }}
                 className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs border border-slate-800 transition cursor-pointer"
               >
-                Clear
+                {t("clear")}
               </button>
             )}
           </form>
 
           <div className="text-xs text-slate-400 self-center">
-            Showing <span className="text-white font-bold">{branches.length}</span>{" "}
-            branches
+            {t("total_branches")}: <span className="text-white font-bold">{branches.length}</span>
           </div>
         </div>
 
@@ -730,7 +718,7 @@ export default function AdminPage() {
         {isLoading ? (
           <div className="h-64 flex flex-col items-center justify-center text-slate-400 space-y-3">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs">Loading registered branches from MongoDB...</p>
+            <p className="text-xs">{t("loading")}</p>
           </div>
         ) : branches.length === 0 ? (
           <div className="border border-dashed border-slate-800 rounded-2xl p-12 text-center bg-slate-900/40">
@@ -749,7 +737,7 @@ export default function AdminPage() {
               }}
               className="mt-5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow transition cursor-pointer"
             >
-              ＋ Register First Branch
+              {t("register_branch_btn")}
             </button>
           </div>
         ) : (
@@ -820,7 +808,7 @@ export default function AdminPage() {
                         onClick={() => openEditModal(branch)}
                         className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition cursor-pointer"
                       >
-                        ✏️ Edit
+                        ✏️ {t("edit")}
                       </button>
                       <button
                         onClick={() =>
@@ -828,7 +816,7 @@ export default function AdminPage() {
                         }
                         className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-lg text-xs font-medium border border-rose-800/40 transition cursor-pointer"
                       >
-                        🗑️ Delete
+                        🗑️ {t("delete")}
                       </button>
                     </div>
                   </div>
@@ -837,10 +825,10 @@ export default function AdminPage() {
                   <div>
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="font-semibold text-slate-400 uppercase tracking-wider text-[11px]">
-                        Staff Allocation Breakdown
+                        {t("staff_breakdown")}
                       </span>
                       <span className="font-mono text-emerald-400 font-bold">
-                        {branchTotal} Total Employees
+                        {branchTotal} {t("employees_count")}
                       </span>
                     </div>
 
@@ -858,7 +846,7 @@ export default function AdminPage() {
                       <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>💵</span>
-                          <span className="text-slate-300">Cash Counters:</span>
+                          <span className="text-slate-300">Cash:</span>
                         </div>
                         <span className="font-bold text-emerald-400 font-mono">
                           {staff.cashCounters ?? 0}
@@ -868,7 +856,7 @@ export default function AdminPage() {
                       <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>📑</span>
-                          <span className="text-slate-300">Loan Officers:</span>
+                          <span className="text-slate-300">Loans:</span>
                         </div>
                         <span className="font-bold text-purple-400 font-mono">
                           {staff.loanOfficers ?? 0}
@@ -878,7 +866,7 @@ export default function AdminPage() {
                       <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>🎧</span>
-                          <span className="text-slate-300">Customer Svc:</span>
+                          <span className="text-slate-300">Service:</span>
                         </div>
                         <span className="font-bold text-amber-400 font-mono">
                           {staff.customerService ?? 0}
@@ -888,7 +876,7 @@ export default function AdminPage() {
                       <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>🆔</span>
-                          <span className="text-slate-300">Account & KYC:</span>
+                          <span className="text-slate-300">KYC:</span>
                         </div>
                         <span className="font-bold text-cyan-400 font-mono">
                           {staff.accountAndKyc ?? 0}
