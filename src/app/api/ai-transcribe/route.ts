@@ -1,15 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { checkRateLimit, getClientIp } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    // Rate limit: Max 20 transcription requests per minute per IP
+    const rate = checkRateLimit(`transcribe:${ip}`, 20, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Speech transcription rate limit exceeded. Please wait a moment." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { audioBase64, mimeType = "audio/wav", language = "en" } = body;
 
-    if (!audioBase64) {
+    if (!audioBase64 || typeof audioBase64 !== "string") {
       return NextResponse.json(
         { success: false, error: "Audio data is required" },
         { status: 400 }
+      );
+    }
+
+    // Security: Enforce maximum payload size (10MB base64 limit ~ 7.5MB raw audio)
+    if (audioBase64.length > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { success: false, error: "Audio file exceeds maximum allowed size of 10MB." },
+        { status: 413 }
       );
     }
 
@@ -57,7 +76,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Secondary Fallback STT: Google Gemini (gemini-1.5-flash / gemini-2.0-flash)
+    // 2. Secondary Fallback STT: Google Gemini (gemini-1.5-flash)
     if (geminiApiKey) {
       try {
         const ai = new GoogleGenAI({ apiKey: geminiApiKey.trim() });

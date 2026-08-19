@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/mongodb";
 import OtpToken from "@/models/OtpToken";
 import bcrypt from "bcryptjs";
 import twilio from "twilio";
+import { checkRateLimit, getClientIp } from "@/lib/security";
 
 function formatToE164(phone: string): string {
   let cleaned = phone.trim().replace(/[\s()-]/g, "");
@@ -20,6 +21,21 @@ function formatToE164(phone: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    // Rate limit: Max 5 verification attempts per minute to prevent brute-forcing 6-digit OTPs
+    const rate = checkRateLimit(`verify-otp:${ip}`, 5, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many invalid attempts. Please wait ${Math.ceil(
+            rate.resetInMs / 1000
+          )} seconds before trying again.`,
+        },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const body = await req.json();
     const { phone, otp } = body;

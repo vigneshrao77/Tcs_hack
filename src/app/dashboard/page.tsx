@@ -436,7 +436,10 @@ export default function DashboardPage() {
     if (!confirm("Are you sure you want to cancel this queue ticket?")) return;
 
     try {
-      const res = await fetch(`/api/tokens/${tokenId}`, { method: "DELETE" });
+      const res = await fetch(`/api/tokens/${tokenId}?accountNumber=${encodeURIComponent(user?.accountNumber || "")}`, {
+        method: "DELETE",
+        headers: { "x-account-number": user?.accountNumber || "" },
+      });
       const data = await res.json();
       if (res.ok && data.success) {
         setActiveToken(null);

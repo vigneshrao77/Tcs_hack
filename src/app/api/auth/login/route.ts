@@ -2,9 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, getClientIp } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    // Rate limit: Max 5 login attempts per minute per IP to prevent brute force
+    const rate = checkRateLimit(`login:${ip}`, 5, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many failed sign-in attempts. Account access temporarily locked. Please retry in ${Math.ceil(
+            rate.resetInMs / 1000
+          )} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const body = await req.json();
     const { accountNumber, password } = body;
@@ -24,7 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "No account found with this Account Number. Please verify or register.",
+          error: "Invalid account number or password.",
         },
         { status: 401 }
       );
@@ -41,7 +57,7 @@ export async function POST(req: NextRequest) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return NextResponse.json(
-        { success: false, error: "Invalid password. Please try again." },
+        { success: false, error: "Invalid account number or password." },
         { status: 401 }
       );
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import ServiceToken from "@/models/ServiceToken";
+import { checkRateLimit, getClientIp } from "@/lib/security";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -8,14 +9,26 @@ interface RouteParams {
 
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
+    const ip = getClientIp(req);
+    const rate = checkRateLimit(`token-del:${ip}`, 20, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many token cancellations. Please wait." },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const { id } = await params;
 
-    const token = await ServiceToken.findByIdAndUpdate(
-      id,
-      { status: "cancelled" },
-      { new: true }
-    );
+    // Retrieve requesting account number to prevent IDOR (Insecure Direct Object Reference)
+    const requestingAcc = (
+      req.headers.get("x-account-number") ||
+      req.nextUrl.searchParams.get("accountNumber") ||
+      ""
+    ).trim().toUpperCase();
+
+    const token = await ServiceToken.findById(id);
 
     if (!token) {
       return NextResponse.json(
@@ -23,6 +36,20 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
         { status: 404 }
       );
     }
+
+    // If requesting account number is provided, enforce ownership check
+    if (requestingAcc && token.accountNumber.toUpperCase() !== requestingAcc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized: You do not have permission to cancel this token ticket.",
+        },
+        { status: 403 }
+      );
+    }
+
+    token.status = "cancelled";
+    await token.save();
 
     return NextResponse.json({
       success: true,

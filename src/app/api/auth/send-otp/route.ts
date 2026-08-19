@@ -3,12 +3,12 @@ import connectToDatabase from "@/lib/mongodb";
 import OtpToken from "@/models/OtpToken";
 import bcrypt from "bcryptjs";
 import twilio from "twilio";
+import { checkRateLimit, getClientIp } from "@/lib/security";
 
 // Helper function to format phone number to E.164
 function formatToE164(phone: string): string {
   let cleaned = phone.trim().replace(/[\s()-]/g, "");
   if (!cleaned.startsWith("+")) {
-    // If 10 digits (e.g. Indian mobile number starting with 6-9), default to +91
     if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
       cleaned = `+91${cleaned}`;
     } else if (cleaned.length === 10) {
@@ -22,6 +22,21 @@ function formatToE164(phone: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    // Rate limit: Max 3 SMS dispatch requests per 5 minutes per IP to prevent toll fraud
+    const rate = checkRateLimit(`send-otp:${ip}`, 3, 5 * 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `SMS rate limit exceeded. Please wait ${Math.ceil(
+            rate.resetInMs / 1000
+          )} seconds before requesting another verification code.`,
+        },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const body = await req.json();
     const { phone } = body;
@@ -39,7 +54,7 @@ export async function POST(req: NextRequest) {
     const rawOtp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = await bcrypt.hash(rawOtp, 8);
 
-    // Delete any old unverified OTPs for this phone (check both raw and formatted)
+    // Delete any old unverified OTPs for this phone
     await OtpToken.deleteMany({
       $or: [{ phone: phone.trim() }, { phone: formattedPhone }],
     });

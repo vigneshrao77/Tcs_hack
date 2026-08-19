@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import BankBranch from "@/models/BankBranch";
+import { verifyAdminSecret, checkRateLimit, getClientIp } from "@/lib/security";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -32,18 +33,24 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
 export async function PUT(req: NextRequest, { params }: RouteParams) {
   try {
+    const ip = getClientIp(req);
+    const rate = checkRateLimit(`banks-put:${ip}`, 30, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please slow down." },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const { id } = await params;
     const body = await req.json();
 
-    const secretHeader = req.headers.get("x-admin-secret");
-    const secretFromReq = secretHeader || body.secretCode;
-
-    if (secretFromReq !== "123456789") {
+    if (!verifyAdminSecret(req, body.secretCode)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized: Invalid or missing Admin Secret Code (123456789 required).",
+          error: "Unauthorized: Invalid or missing Admin Secret Code.",
         },
         { status: 403 }
       );
@@ -51,12 +58,20 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     const updateData: Record<string, unknown> = {};
 
-    if (body.bankName) updateData.bankName = body.bankName.trim();
-    if (body.bankLocation) updateData.bankLocation = body.bankLocation.trim();
-    if (body.bankPhone) updateData.bankPhone = body.bankPhone.trim();
-    if (body.status) updateData.status = body.status;
+    if (body.bankName && typeof body.bankName === "string") {
+      updateData.bankName = body.bankName.trim();
+    }
+    if (body.bankLocation && typeof body.bankLocation === "string") {
+      updateData.bankLocation = body.bankLocation.trim();
+    }
+    if (body.bankPhone && typeof body.bankPhone === "string") {
+      updateData.bankPhone = body.bankPhone.trim();
+    }
+    if (body.status === "active" || body.status === "maintenance" || body.status === "closed") {
+      updateData.status = body.status;
+    }
 
-    if (body.bankCode) {
+    if (body.bankCode && typeof body.bankCode === "string") {
       const formattedCode = body.bankCode.trim().toUpperCase();
       const existing = await BankBranch.findOne({
         bankCode: formattedCode,
@@ -83,11 +98,11 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     if (body.staffing) {
       updateData.staffing = {
-        managers: Math.max(1, Number(body.staffing.managers ?? 1)),
-        cashCounters: Math.max(0, Number(body.staffing.cashCounters ?? 0)),
-        loanOfficers: Math.max(0, Number(body.staffing.loanOfficers ?? 0)),
-        customerService: Math.max(0, Number(body.staffing.customerService ?? 0)),
-        accountAndKyc: Math.max(0, Number(body.staffing.accountAndKyc ?? 0)),
+        managers: Math.min(20, Math.max(1, Number(body.staffing.managers ?? 1))),
+        cashCounters: Math.min(50, Math.max(0, Number(body.staffing.cashCounters ?? 0))),
+        loanOfficers: Math.min(50, Math.max(0, Number(body.staffing.loanOfficers ?? 0))),
+        customerService: Math.min(50, Math.max(0, Number(body.staffing.customerService ?? 0))),
+        accountAndKyc: Math.min(50, Math.max(0, Number(body.staffing.accountAndKyc ?? 0))),
       };
     }
 
@@ -120,15 +135,23 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
+    const ip = getClientIp(req);
+    const rate = checkRateLimit(`banks-del:${ip}`, 10, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please slow down." },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const { id } = await params;
 
-    const secretHeader = req.headers.get("x-admin-secret");
-    if (secretHeader !== "123456789") {
+    if (!verifyAdminSecret(req)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized: Invalid or missing Admin Secret Code (123456789 required).",
+          error: "Unauthorized: Invalid or missing Admin Secret Code.",
         },
         { status: 403 }
       );

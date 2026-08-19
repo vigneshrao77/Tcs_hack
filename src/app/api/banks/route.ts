@@ -1,16 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import BankBranch from "@/models/BankBranch";
+import {
+  escapeRegex,
+  verifyAdminSecret,
+  checkRateLimit,
+  getClientIp,
+} from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rate = checkRateLimit(`banks-get:${ip}`, 60, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please slow down." },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
 
     let query = {};
     if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), "i");
+      const sanitizedSearch = escapeRegex(search.trim());
+      const regex = new RegExp(sanitizedSearch, "i");
       query = {
         $or: [
           { bankName: regex },
@@ -40,17 +56,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rate = checkRateLimit(`banks-post:${ip}`, 20, 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     await connectToDatabase();
     const body = await req.json();
 
-    const secretHeader = req.headers.get("x-admin-secret");
-    const secretFromReq = secretHeader || body.secretCode;
-
-    if (secretFromReq !== "123456789") {
+    if (!verifyAdminSecret(req, body.secretCode)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unauthorized: Invalid or missing Admin Secret Code (123456789 required).",
+          error: "Unauthorized: Invalid or missing Admin Secret Code.",
         },
         { status: 403 }
       );
@@ -105,13 +127,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Process staffing numbers
+    // Process staffing numbers with bounds enforcement
     const cleanStaffing = {
-      managers: Math.max(1, Number(staffing?.managers ?? 1)),
-      cashCounters: Math.max(0, Number(staffing?.cashCounters ?? 0)),
-      loanOfficers: Math.max(0, Number(staffing?.loanOfficers ?? 0)),
-      customerService: Math.max(0, Number(staffing?.customerService ?? 0)),
-      accountAndKyc: Math.max(0, Number(staffing?.accountAndKyc ?? 0)),
+      managers: Math.min(20, Math.max(1, Number(staffing?.managers ?? 1))),
+      cashCounters: Math.min(50, Math.max(0, Number(staffing?.cashCounters ?? 0))),
+      loanOfficers: Math.min(50, Math.max(0, Number(staffing?.loanOfficers ?? 0))),
+      customerService: Math.min(50, Math.max(0, Number(staffing?.customerService ?? 0))),
+      accountAndKyc: Math.min(50, Math.max(0, Number(staffing?.accountAndKyc ?? 0))),
     };
 
     const newBranch = await BankBranch.create({
@@ -126,7 +148,7 @@ export async function POST(req: NextRequest) {
           }
         : undefined,
       staffing: cleanStaffing,
-      status: status || "active",
+      status: status === "maintenance" || status === "closed" ? status : "active",
     });
 
     return NextResponse.json(
