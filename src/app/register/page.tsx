@@ -212,7 +212,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       {/* Top Bar with Language Switcher */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
         <LanguageSwitcher />
@@ -221,22 +221,22 @@ export default function RegisterPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-xl">
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-3xl shadow-inner">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-3xl shadow-sm">
             🏦
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
             {t("register_title")}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500">
             {t("register_subtitle")}
           </p>
         </div>
 
         {/* Card Form */}
-        <div className="mt-8 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+        <div className="mt-8 bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
           {/* Alerts */}
           {errorAlert && (
-            <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-between">
               <span>⚠️ {errorAlert}</span>
               <button
                 type="button"
@@ -249,14 +249,14 @@ export default function RegisterPage() {
           )}
 
           {successAlert && (
-            <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
               <span className="animate-bounce">✅</span>
               <span>{successAlert}</span>
             </div>
           )}
 
           {otpSuccessNotice && (
-            <div className="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span>📱</span>
                 <span>{otpSuccessNotice}</span>
@@ -273,26 +273,26 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-6">
             {/* Step 1: Bank Selection & Account Number */}
-            <div className="space-y-4 border-b border-slate-800 pb-5">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <div className="space-y-4 border-b border-slate-200 pb-5">
+              <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 {t("step1_title")}
               </h2>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   {t("select_bank_branch")}
                 </label>
                 {isLoadingBranches ? (
-                  <div className="text-xs text-slate-400">{t("loading")}</div>
+                  <div className="text-xs text-slate-500">{t("loading")}</div>
                 ) : branches.length === 0 ? (
-                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
                     <span>No bank branches registered yet. Please contact system administrator.</span>
                   </div>
                 ) : (
                   <select
                     value={selectedBankId}
                     onChange={(e) => handleBankChange(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
                   >
                     {branches.map((b) => (
                       <option key={b._id} value={b._id}>
@@ -304,7 +304,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   {t("full_name")}
                 </label>
                 <input
@@ -313,13 +313,13 @@ export default function RegisterPage() {
                   placeholder="e.g. Alexander Hamilton"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-slate-300">
+                  <label className="block text-xs font-medium text-slate-700">
                     {t("unique_acc_label")}
                   </label>
                   {selectedBank && (
@@ -328,7 +328,7 @@ export default function RegisterPage() {
                       onClick={() =>
                         generateRandomAccountNumber(selectedBank.bankCode)
                       }
-                      className="text-[11px] text-emerald-400 hover:text-emerald-300 transition cursor-pointer"
+                      className="text-[11px] text-emerald-700 hover:text-emerald-800 font-medium transition cursor-pointer"
                     >
                       {t("regenerate")}
                     </button>
@@ -341,12 +341,12 @@ export default function RegisterPage() {
                     placeholder="e.g. HDFC-84920194"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 font-mono text-xs sm:text-sm uppercase focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-xs sm:text-sm uppercase focus:outline-none focus:border-emerald-600 shadow-sm"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-500 mt-1">
                   {t("must_start_with")}{" "}
-                  <strong className="text-emerald-400 font-mono">
+                  <strong className="text-emerald-700 font-mono">
                     {selectedBank ? selectedBank.bankCode : "BANK"}
                   </strong>
                 </p>
@@ -354,20 +354,20 @@ export default function RegisterPage() {
             </div>
 
             {/* Step 2: Phone & Twilio OTP Verification */}
-            <div className="space-y-4 border-b border-slate-800 pb-5">
+            <div className="space-y-4 border-b border-slate-200 pb-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                   {t("step2_title")}
                 </h2>
                 {isOtpVerified && (
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 flex items-center gap-1">
                     ✓ {t("verified")}
                   </span>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   {t("phone_label")}
                 </label>
                 <div className="flex gap-2">
@@ -378,14 +378,14 @@ export default function RegisterPage() {
                     placeholder="e.g. +91 9876543210 or +1 555 123 4567"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-emerald-500 disabled:opacity-60"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 disabled:bg-slate-100 disabled:text-slate-500 shadow-sm"
                   />
                   {!isOtpVerified && (
                     <button
                       type="button"
                       onClick={handleSendOtp}
                       disabled={isSendingOtp || !phone}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
                     >
                       {isSendingOtp ? t("loading") : isOtpSent ? t("resend_otp") : t("send_otp")}
                     </button>
@@ -395,12 +395,12 @@ export default function RegisterPage() {
 
               {/* OTP Entry Section */}
               {isOtpSent && !isOtpVerified && (
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-emerald-500/30 space-y-3">
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-emerald-300 space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-emerald-400">
+                    <label className="block text-xs font-semibold text-emerald-800">
                       {t("enter_otp_label")}
                     </label>
-                    <span className="text-[11px] text-slate-400">5 {t("mins")}</span>
+                    <span className="text-[11px] text-slate-500">5 {t("mins")}</span>
                   </div>
 
                   <div className="flex gap-2">
@@ -410,13 +410,13 @@ export default function RegisterPage() {
                       placeholder="123456"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                      className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono tracking-widest text-center text-base focus:outline-none focus:border-emerald-500"
+                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono tracking-widest text-center text-base focus:outline-none focus:border-emerald-600 shadow-sm"
                     />
                     <button
                       type="button"
                       onClick={handleVerifyOtp}
                       disabled={isVerifyingOtp || otpCode.length < 4}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50 shadow-sm"
                     >
                       {isVerifyingOtp ? t("loading") : t("verify_otp_btn")}
                     </button>
@@ -427,12 +427,12 @@ export default function RegisterPage() {
 
             {/* Step 3: Permanent Address & Password */}
             <div className="space-y-4">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 {t("step3_title")}
               </h2>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   {t("permanent_address")} *
                 </label>
                 <textarea
@@ -441,13 +441,13 @@ export default function RegisterPage() {
                   placeholder="e.g. 142 Elm Street, Apt 4B, New York, NY 10001"
                   value={permanentAddress}
                   onChange={(e) => setPermanentAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-emerald-500 resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 resize-none shadow-sm"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     {t("set_password")}
                   </label>
                   <div className="relative">
@@ -457,13 +457,13 @@ export default function RegisterPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     {t("confirm_password")}
                   </label>
                   <div className="relative">
@@ -473,7 +473,7 @@ export default function RegisterPage() {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-emerald-600 shadow-sm"
                     />
                   </div>
                 </div>
@@ -485,9 +485,9 @@ export default function RegisterPage() {
                   id="showPassword"
                   checked={showPassword}
                   onChange={(e) => setShowPassword(e.target.checked)}
-                  className="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-emerald-500"
+                  className="rounded bg-white border-slate-300 text-emerald-600 focus:ring-emerald-500"
                 />
-                <label htmlFor="showPassword" className="text-xs text-slate-400 cursor-pointer">
+                <label htmlFor="showPassword" className="text-xs text-slate-600 cursor-pointer">
                   {t("show_password")}
                 </label>
               </div>
@@ -497,7 +497,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting || !isOtpVerified}
-              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-sm transition shadow-lg disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
               {isSubmitting
                 ? t("loading")
@@ -508,12 +508,12 @@ export default function RegisterPage() {
           </form>
 
           {/* Footer Link */}
-          <div className="text-center pt-2 border-t border-slate-800/80">
-            <p className="text-xs text-slate-400">
+          <div className="text-center pt-2 border-t border-slate-100">
+            <p className="text-xs text-slate-600">
               {t("already_have_account")}{" "}
               <Link
                 href="/login"
-                className="text-emerald-400 hover:text-emerald-300 font-semibold underline"
+                className="text-emerald-700 hover:text-emerald-800 font-semibold underline"
               >
                 {t("sign_in_link")}
               </Link>

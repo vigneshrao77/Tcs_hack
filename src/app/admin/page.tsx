@@ -11,8 +11,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
   loading: () => (
-    <div className="h-64 rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-slate-400 space-y-2">
-      <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+    <div className="h-64 rounded-xl bg-slate-100 border border-slate-300 flex flex-col items-center justify-center text-slate-500 space-y-2">
+      <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
       <p className="text-xs">Loading OpenStreetMap Component...</p>
     </div>
   ),
@@ -276,8 +276,8 @@ export default function AdminPage() {
   // Initial Auth Check Spinner
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-sans">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500 font-sans">
+        <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -285,27 +285,27 @@ export default function AdminPage() {
   // If Admin is NOT Unlocked, show Passcode Gate Screen
   if (!isAdminUnlocked) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900 font-sans flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
           <LanguageSwitcher />
         </div>
 
         <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
           <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-3xl shadow-inner animate-pulse">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-3xl shadow-sm animate-pulse">
               🔒
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               Restricted Admin Authorization
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-500">
               This area is restricted to authorized personnel. Enter your secret passcode to access bank creation and staff configurations.
             </p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl space-y-5">
             {secretError && (
-              <div className="p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-between">
                 <span>⚠️ {secretError}</span>
                 <button
                   type="button"
@@ -319,7 +319,7 @@ export default function AdminPage() {
 
             <form onSubmit={handleUnlockAdmin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Admin Secret Code *
                 </label>
                 <div className="relative">
@@ -330,12 +330,12 @@ export default function AdminPage() {
                     placeholder="Enter 9-digit Secret Code"
                     value={secretInput}
                     onChange={(e) => setSecretInput(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-mono text-sm tracking-widest placeholder-slate-600 focus:outline-none focus:border-rose-500"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono text-sm tracking-widest placeholder-slate-400 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-500 shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowSecret(!showSecret)}
-                    className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-slate-700 cursor-pointer font-medium"
                   >
                     {showSecret ? "Hide" : "Show"}
                   </button>
@@ -347,16 +347,16 @@ export default function AdminPage() {
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold text-sm transition shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>🔓 Unlock Admin Portal</span>
               </button>
             </form>
 
-            <div className="pt-3 border-t border-slate-800 text-center">
+            <div className="pt-3 border-t border-slate-100 text-center">
               <Link
                 href="/dashboard"
-                className="text-xs text-slate-500 hover:text-slate-400 transition"
+                className="text-xs text-slate-500 hover:text-slate-800 transition"
               >
                 ← Return to Customer Portal
               </Link>
@@ -399,17 +399,17 @@ export default function AdminPage() {
 
   // Render Unlocked Admin Portal
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
       {/* Top Navigation */}
-      <nav className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+      <nav className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏦</span>
             <div>
-              <span className="text-base font-bold text-white tracking-wide">
+              <span className="text-base font-bold text-slate-900 tracking-wide">
                 {t("admin_portal")}
               </span>
-              <span className="hidden sm:inline-block ml-2 text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              <span className="hidden sm:inline-block ml-2 text-xs text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">
                 {t("network_setup")}
               </span>
             </div>
@@ -428,14 +428,14 @@ export default function AdminPage() {
                   setShowForm(true);
                 }
               }}
-              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs transition shadow flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
               <span>{showForm ? t("close_form_btn") : t("register_branch_btn")}</span>
             </button>
 
             <button
               onClick={handleLockAdmin}
-              className="px-3 py-1.5 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/60 transition text-xs font-semibold flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-2xs"
             >
               <span>🔒 Lock Console</span>
             </button>
@@ -447,10 +447,10 @@ export default function AdminPage() {
         {/* Global Alert Notification */}
         {alertMessage && (
           <div
-            className={`p-4 rounded-xl text-sm font-medium flex items-center justify-between shadow-lg ${
+            className={`p-4 rounded-xl text-sm font-medium flex items-center justify-between shadow-md ${
               alertMessage.type === "success"
-                ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40"
-                : "bg-rose-950/80 text-rose-300 border border-rose-500/40"
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                : "bg-rose-50 text-rose-800 border border-rose-300"
             }`}
           >
             <div className="flex items-center gap-3">
@@ -468,50 +468,50 @@ export default function AdminPage() {
 
         {/* Stats Metrics Header */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("total_branches")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
               {totalBranchesCount}
             </div>
-            <div className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+            <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-medium">
               <span>●</span> MongoDB Active
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("total_staff")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
               {totalStaffCount}
             </div>
-            <div className="text-[11px] text-indigo-400 mt-1">
+            <div className="text-[11px] text-indigo-700 mt-1 font-medium">
               {t("staff_breakdown")}
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("cash_counters_stat")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
               {totalCashCounters}
             </div>
-            <div className="text-[11px] text-amber-400 mt-1">
+            <div className="text-[11px] text-amber-700 mt-1 font-medium">
               {t("cash_label")}
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
-            <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">
               {t("kyc_officers_stat")}
             </div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
               {totalKycStaff}
             </div>
-            <div className="text-[11px] text-cyan-400 mt-1">
+            <div className="text-[11px] text-cyan-700 mt-1 font-medium">
               {t("kyc_label")}
             </div>
           </div>
@@ -519,19 +519,19 @@ export default function AdminPage() {
 
         {/* Branch Registration / Edit Form Drawer */}
         {showForm && (
-          <div className="bg-slate-900 border-2 border-emerald-500/40 rounded-2xl p-6 sm:p-8 shadow-2xl animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-6">
+          <div className="bg-white border-2 border-emerald-500/40 rounded-2xl p-6 sm:p-8 shadow-xl animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5 mb-6">
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <span>🏛️</span>
                   {editingBranchId
                     ? `${t("edit_branch_title")}: ${bankName}`
                     : t("reg_branch_title")}
                 </h2>
               </div>
-              <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs">
-                <span className="text-slate-400">{t("assigned_staff")}</span>
-                <span className="font-bold text-emerald-400 text-sm">
+              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
+                <span className="text-slate-500">{t("assigned_staff")}</span>
+                <span className="font-bold text-emerald-700 text-sm">
                   {formTotalStaff} {t("employees_count")}
                 </span>
               </div>
@@ -540,12 +540,12 @@ export default function AdminPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Section 1: Basic Information */}
               <div>
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-3">
                   1. {t("branch_name")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       {t("branch_name")}
                     </label>
                     <input
@@ -554,12 +554,12 @@ export default function AdminPage() {
                       placeholder="e.g. Downtown Central Branch"
                       value={bankName}
                       onChange={(e) => setBankName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs sm:text-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       {t("bank_code_unique")}
                     </label>
                     <input
@@ -568,12 +568,12 @@ export default function AdminPage() {
                       placeholder="e.g. BNK-0102"
                       value={bankCode}
                       onChange={(e) => setBankCode(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono text-xs sm:text-sm uppercase"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 font-mono text-xs sm:text-sm uppercase shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       {t("branch_phone")}
                     </label>
                     <input
@@ -582,7 +582,7 @@ export default function AdminPage() {
                       placeholder="e.g. +91 98765 43210"
                       value={bankPhone}
                       onChange={(e) => setBankPhone(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs sm:text-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs sm:text-sm shadow-xs"
                     />
                   </div>
                 </div>
@@ -591,7 +591,7 @@ export default function AdminPage() {
               {/* Section 2: OpenStreetMap Location Selector */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🗺️</span> {t("location_selection")}
                   </h3>
                 </div>
@@ -606,40 +606,40 @@ export default function AdminPage() {
               {/* Section 3: Employees Divided by Categories */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     {t("emp_by_dept")}
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   {/* Category 1: Manager */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xl">👔</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">
                           Min 1
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">{t("mgr_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("mgr_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("managers", -1)}
                         disabled={staffing.managers <= 1}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-white text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-sm font-mono">
                         {staffing.managers}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("managers", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -647,33 +647,33 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 2: Cash Counters */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xl">💵</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
                           Cash
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">{t("cash_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("cash_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("cashCounters", -1)}
                         disabled={staffing.cashCounters <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-white text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-sm font-mono">
                         {staffing.cashCounters}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("cashCounters", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -681,33 +681,33 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 3: Loan Officers */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xl">📑</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-semibold">
                           Credit
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">{t("loan_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("loan_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("loanOfficers", -1)}
                         disabled={staffing.loanOfficers <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-white text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-sm font-mono">
                         {staffing.loanOfficers}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("loanOfficers", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -715,33 +715,33 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 4: Customer Service */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xl">🎧</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
                           Helpdesk
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">{t("cust_svc_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("cust_svc_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("customerService", -1)}
                         disabled={staffing.customerService <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-white text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-sm font-mono">
                         {staffing.customerService}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("customerService", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -749,33 +749,33 @@ export default function AdminPage() {
                   </div>
 
                   {/* Category 5: Account & KYC */}
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition shadow-2xs">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-xl">🆔</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">
                           Onboard
                         </span>
                       </div>
-                      <h4 className="text-xs font-bold text-white mt-2">{t("kyc_label")}</h4>
+                      <h4 className="text-xs font-bold text-slate-900 mt-2">{t("kyc_label")}</h4>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 bg-slate-900 rounded-lg p-1 border border-slate-800">
+                    <div className="flex items-center justify-between mt-4 bg-white rounded-lg p-1 border border-slate-200 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => handleStaffChange("accountAndKyc", -1)}
                         disabled={staffing.accountAndKyc <= 0}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="font-bold text-white text-sm font-mono">
+                      <span className="font-bold text-slate-900 text-sm font-mono">
                         {staffing.accountAndKyc}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleStaffChange("accountAndKyc", 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -785,21 +785,21 @@ export default function AdminPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
                     resetForm();
                     setShowForm(false);
                   }}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer border border-slate-300 shadow-2xs"
                 >
                   {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold text-xs transition shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmitting
                     ? t("loading")
@@ -821,15 +821,15 @@ export default function AdminPage() {
                 placeholder={t("search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs"
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 text-xs shadow-xs"
               />
-              <span className="absolute left-3 top-2.5 text-slate-500 text-xs">
+              <span className="absolute left-3 top-2.5 text-slate-400 text-xs">
                 🔍
               </span>
             </div>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium border border-slate-300 transition cursor-pointer shadow-xs"
             >
               {t("search")}
             </button>
@@ -840,31 +840,31 @@ export default function AdminPage() {
                   setSearchQuery("");
                   fetchBranches("");
                 }}
-                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 text-xs border border-slate-800 transition cursor-pointer"
+                className="px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-600 text-xs border border-slate-300 transition cursor-pointer"
               >
                 {t("clear")}
               </button>
             )}
           </form>
 
-          <div className="text-xs text-slate-400 self-center">
-            {t("total_branches")}: <span className="text-white font-bold">{branches.length}</span>
+          <div className="text-xs text-slate-500 self-center">
+            {t("total_branches")}: <span className="text-slate-900 font-bold">{branches.length}</span>
           </div>
         </div>
 
         {/* Branches Grid & Cards */}
         {isLoading ? (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-400 space-y-3">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="h-64 flex flex-col items-center justify-center text-slate-500 space-y-3">
+            <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="text-xs">{t("loading")}</p>
           </div>
         ) : branches.length === 0 ? (
-          <div className="border border-dashed border-slate-800 rounded-2xl p-12 text-center bg-slate-900/40">
+          <div className="border border-dashed border-slate-300 rounded-2xl p-12 text-center bg-white shadow-xs">
             <span className="text-4xl">🏛️</span>
-            <h3 className="text-base font-bold text-white mt-3">
+            <h3 className="text-base font-bold text-slate-900 mt-3">
               No Bank Branches Registered Yet
             </h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Get started by registering your first bank branch with location,
               phone, and staff allocation.
             </p>
@@ -873,7 +873,7 @@ export default function AdminPage() {
                 resetForm();
                 setShowForm(true);
               }}
-              className="mt-5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow transition cursor-pointer"
+              className="mt-5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition cursor-pointer"
             >
               {t("register_branch_btn")}
             </button>
@@ -900,27 +900,27 @@ export default function AdminPage() {
               return (
                 <div
                   key={branch._id}
-                  className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 shadow-sm transition space-y-4"
+                  className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-5 shadow-xs transition space-y-4 hover:shadow-sm"
                 >
                   {/* Top Bar: Name, Code, Location, Actions */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-xl shrink-0">
                         🏦
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base font-bold text-white">
+                          <h3 className="text-base font-bold text-slate-900">
                             {branch.bankName}
                           </h3>
-                          <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-emerald-500/30">
+                          <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
                             {branch.bankCode}
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 uppercase">
                             {branch.status || "active"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-slate-400 mt-1 flex-wrap">
+                        <div className="flex items-center gap-4 text-xs text-slate-600 mt-1 flex-wrap">
                           <span className="flex items-center gap-1">
                             📍 {branch.bankLocation}
                           </span>
@@ -932,7 +932,7 @@ export default function AdminPage() {
                               href={`https://www.openstreetmap.org/?mlat=${coords.latitude}&mlon=${coords.longitude}#map=17/${coords.latitude}/${coords.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:underline font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20"
+                              className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium"
                             >
                               🗺️ OSM: {coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)} ↗
                             </a>
@@ -944,7 +944,7 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 self-end md:self-center">
                       <button
                         onClick={() => openEditModal(branch)}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition cursor-pointer"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-medium border border-slate-300 transition cursor-pointer shadow-2xs"
                       >
                         ✏️ {t("edit")}
                       </button>
@@ -952,7 +952,7 @@ export default function AdminPage() {
                         onClick={() =>
                           handleDelete(branch._id, branch.bankName, branch.bankCode)
                         }
-                        className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-lg text-xs font-medium border border-rose-800/40 transition cursor-pointer"
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium border border-rose-200 transition cursor-pointer shadow-2xs"
                       >
                         🗑️ {t("delete")}
                       </button>
@@ -962,61 +962,61 @@ export default function AdminPage() {
                   {/* Staff Category Allocation Badges */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="font-semibold text-slate-400 uppercase tracking-wider text-[11px]">
+                      <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">
                         {t("staff_breakdown")}
                       </span>
-                      <span className="font-mono text-emerald-400 font-bold">
+                      <span className="font-mono text-emerald-700 font-bold">
                         {branchTotal} {t("employees_count")}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
-                      <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>👔</span>
-                          <span className="text-slate-300">Manager:</span>
+                          <span className="text-slate-600">Manager:</span>
                         </div>
-                        <span className="font-bold text-white font-mono">
+                        <span className="font-bold text-slate-900 font-mono">
                           {staff.managers ?? 1}
                         </span>
                       </div>
 
-                      <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>💵</span>
-                          <span className="text-slate-300">Cash:</span>
+                          <span className="text-slate-600">Cash:</span>
                         </div>
-                        <span className="font-bold text-emerald-400 font-mono">
+                        <span className="font-bold text-emerald-700 font-mono">
                           {staff.cashCounters ?? 0}
                         </span>
                       </div>
 
-                      <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>📑</span>
-                          <span className="text-slate-300">Loans:</span>
+                          <span className="text-slate-600">Loans:</span>
                         </div>
-                        <span className="font-bold text-purple-400 font-mono">
+                        <span className="font-bold text-purple-700 font-mono">
                           {staff.loanOfficers ?? 0}
                         </span>
                       </div>
 
-                      <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>🎧</span>
-                          <span className="text-slate-300">Service:</span>
+                          <span className="text-slate-600">Service:</span>
                         </div>
-                        <span className="font-bold text-amber-400 font-mono">
+                        <span className="font-bold text-amber-700 font-mono">
                           {staff.customerService ?? 0}
                         </span>
                       </div>
 
-                      <div className="bg-slate-950 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span>🆔</span>
-                          <span className="text-slate-300">KYC:</span>
+                          <span className="text-slate-600">KYC:</span>
                         </div>
-                        <span className="font-bold text-cyan-400 font-mono">
+                        <span className="font-bold text-cyan-700 font-mono">
                           {staff.accountAndKyc ?? 0}
                         </span>
                       </div>
