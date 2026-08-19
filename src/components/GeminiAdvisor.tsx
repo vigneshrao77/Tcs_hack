@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { BankingServiceType } from "@/types/serviceTypes";
-import { CheckIcon, SparklesIcon } from "@/components/BankIcons";
+import { CheckIcon, SparklesIcon, UserIcon } from "@/components/BankIcons";
 
 interface DocumentRequirement {
   name: string;
@@ -15,6 +15,9 @@ interface AIAdviceResponse {
   requiresVisit: boolean;
   visitVerdict: string;
   summary: string;
+  mappedDepartment?: string;
+  mappedEmployeeRole?: string;
+  mappedDesk?: string;
   digitalAlternatives: string[];
   requiredDocuments: DocumentRequirement[];
   prerequisites: string[];
@@ -215,6 +218,36 @@ export default function GeminiAdvisor({
               </span>
             </div>
           </div>
+
+          {/* Mapped Bank Officer & Counter Assignment Pill Box */}
+          {(advice.mappedDepartment || advice.mappedEmployeeRole || advice.mappedDesk) && (
+            <div className="bg-white/90 border border-slate-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
+                  <UserIcon size={15} />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Assigned Bank Officer & Counter
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-2 mt-0.5">
+                    <span>{advice.mappedEmployeeRole}</span>
+                    {advice.mappedDesk && (
+                      <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                        {advice.mappedDesk}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {advice.mappedDepartment && (
+                <div className="text-[11px] font-medium text-slate-500 self-start sm:self-center">
+                  Department: <strong className="text-slate-800">{advice.mappedDepartment}</strong>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* If Visit NOT Required: Digital Alternatives */}
           {!advice.requiresVisit && advice.digitalAlternatives.length > 0 && (

@@ -967,8 +967,8 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Staff Allocations */}
-                  <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                  {/* Staff Allocations Summary */}
+                  <div className="flex items-center justify-between text-xs flex-wrap gap-2 pt-1 border-t border-slate-100">
                     <span className="font-medium text-slate-400 uppercase tracking-wider text-[9px]">
                       {t("staff_breakdown")}:
                     </span>
@@ -992,6 +992,51 @@ export default function AdminPage() {
                       <span className="bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-emerald-900 font-bold">
                         {t("assigned_staff")} {branchTotal}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Active Employee Query Mapping Roster */}
+                  <div className="pt-2 border-t border-slate-100 bg-slate-50/60 rounded-lg p-2.5 space-y-1.5">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                      <span>Active Employee Counter Roster & Query Routing</span>
+                      <span className="text-[9px] font-mono text-emerald-700 font-medium">Automatic Query Routing Active</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-[10px] font-mono">
+                      {Array.from({ length: staff.managers || 1 }).map((_, i) => (
+                        <div key={`mgr-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                          <div className="font-bold text-slate-900">MGR-0{i + 1}</div>
+                          <div className="text-slate-500 text-[9px] truncate">Branch Manager</div>
+                          <div className="text-slate-400 text-[8px] mt-0.5">Manager Desk #{i + 1}</div>
+                        </div>
+                      ))}
+                      {Array.from({ length: staff.cashCounters || 0 }).map((_, i) => (
+                        <div key={`csh-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                          <div className="font-bold text-slate-900">CSH-0{i + 1}</div>
+                          <div className="text-slate-500 text-[9px] truncate">Cashier Officer</div>
+                          <div className="text-slate-400 text-[8px] mt-0.5">Cash Counter #{i + 1}</div>
+                        </div>
+                      ))}
+                      {Array.from({ length: staff.loanOfficers || 0 }).map((_, i) => (
+                        <div key={`lno-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                          <div className="font-bold text-slate-900">LNO-0{i + 1}</div>
+                          <div className="text-slate-500 text-[9px] truncate">Credit & Loan Officer</div>
+                          <div className="text-slate-400 text-[8px] mt-0.5">Loan Desk #{i + 1}</div>
+                        </div>
+                      ))}
+                      {Array.from({ length: staff.customerService || 0 }).map((_, i) => (
+                        <div key={`csr-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                          <div className="font-bold text-slate-900">CSR-0{i + 1}</div>
+                          <div className="text-slate-500 text-[9px] truncate">Customer Support</div>
+                          <div className="text-slate-400 text-[8px] mt-0.5">Service Desk #{i + 1}</div>
+                        </div>
+                      ))}
+                      {Array.from({ length: staff.accountAndKyc || 0 }).map((_, i) => (
+                        <div key={`kyc-${i}`} className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                          <div className="font-bold text-slate-900">KYC-0{i + 1}</div>
+                          <div className="text-slate-500 text-[9px] truncate">KYC Specialist</div>
+                          <div className="text-slate-400 text-[8px] mt-0.5">KYC Counter #{i + 1}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

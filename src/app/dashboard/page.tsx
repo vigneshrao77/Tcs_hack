@@ -22,7 +22,7 @@ import {
   TicketIcon,
   ShieldCheckIcon,
   CheckIcon,
-  SparklesIcon,
+  UserIcon,
 } from "@/components/BankIcons";
 
 interface CustomerUser {
@@ -43,6 +43,9 @@ interface ActiveToken {
   serviceType: BankingServiceType;
   assignedCategory: string;
   categoryLabel: string;
+  assignedEmployeeName?: string;
+  assignedEmployeeId?: string;
+  assignedDesk?: string;
   status: "waiting" | "called" | "in_service" | "completed" | "cancelled";
   queuePosition: number;
   estimatedWaitMinutes: number;
@@ -207,7 +210,7 @@ export default function DashboardPage() {
         setNotes("");
         setAlertNotice({
           type: "success",
-          text: `Queue Ticket ${data.data.tokenNumber} issued. Position: #${data.data.queuePosition} in line.`,
+          text: `Queue Ticket ${data.data.tokenNumber} issued & assigned to ${data.data.assignedEmployeeName || "Officer"} at ${data.data.assignedDesk || "Counter"}.`,
         });
       } else {
         setAlertNotice({
@@ -531,7 +534,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Live Active Token Queue Card */}
+        {/* Live Active Token Queue Card with Mapped Employee & Desk */}
         {activeToken && (
           <div className="rounded-2xl bg-white/90 backdrop-blur-xl border border-slate-300/80 p-5 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
@@ -562,6 +565,35 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Mapped Bank Employee & Assigned Counter Banner */}
+            <div className="bg-slate-50/90 border border-slate-200/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center shrink-0">
+                  <UserIcon size={16} />
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Assigned Bank Employee
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-2 mt-0.5">
+                    <span>{activeToken.assignedEmployeeName || "Counter Officer"}</span>
+                    {activeToken.assignedEmployeeId && (
+                      <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white text-slate-800 border border-slate-300 shadow-2xs">
+                        ID: {activeToken.assignedEmployeeId}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <span className="text-[11px] text-slate-500">Designated Counter:</span>
+                <span className="text-xs font-bold text-slate-900 font-mono bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-2xs">
+                  {activeToken.assignedDesk || activeToken.categoryLabel}
+                </span>
+              </div>
+            </div>
+
             {/* Token Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 shadow-2xs">
@@ -581,7 +613,7 @@ export default function DashboardPage() {
                   {getCategoryDeskName(activeToken.assignedCategory, activeToken.categoryLabel)}
                 </div>
                 <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                  {activeToken.assignedCategory}
+                  {activeToken.assignedDesk || activeToken.assignedCategory}
                 </div>
               </div>
 
@@ -613,7 +645,7 @@ export default function DashboardPage() {
             <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-600">
               <span className="text-[11px]">
                 {t("ticket_waiting_notice")}{" "}
-                <strong className="text-slate-900 font-mono">{activeToken.tokenNumber}</strong>.
+                <strong className="text-slate-900 font-mono">{activeToken.tokenNumber}</strong>. Please approach <strong className="text-slate-900">{activeToken.assignedDesk || "the counter"}</strong> when called.
               </span>
               <span className="text-[10px] text-slate-400 font-mono">
                 {t("issued")}: {new Date(activeToken.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

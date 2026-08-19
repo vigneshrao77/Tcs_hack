@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     let queueStats = {
       totalWaiting: 0,
       byCategory: {} as Record<string, number>,
+      byEmployee: {} as Record<string, number>,
     };
 
     if (bankCode) {
@@ -45,6 +46,10 @@ export async function GET(req: NextRequest) {
       waitingTokens.forEach((t) => {
         queueStats.byCategory[t.assignedCategory] =
           (queueStats.byCategory[t.assignedCategory] || 0) + 1;
+        if (t.assignedEmployeeId) {
+          queueStats.byEmployee[t.assignedEmployeeId] =
+            (queueStats.byEmployee[t.assignedEmployeeId] || 0) + 1;
+        }
       });
     }
 
@@ -136,13 +141,56 @@ export async function POST(req: NextRequest) {
       status: "waiting",
     });
 
-    // Check branch staff for this counter to estimate wait time
+    // Check branch staff created by admin for this bank branch
     let staffCount = 1;
+    let employeePrefix = "EMP";
+    let roleTitle = "Officer";
+    let deskTitle = "Desk";
+
     const branch = await BankBranch.findOne({ bankCode: user.bankCode });
     if (branch && branch.staffing) {
-      const staffMap = branch.staffing as unknown as Record<string, number>;
-      staffCount = Math.max(1, staffMap[meta.category] || 1);
+      const s = branch.staffing;
+      switch (meta.category) {
+        case "cashCounters":
+          staffCount = Math.max(1, s.cashCounters || 1);
+          employeePrefix = "CSH";
+          roleTitle = "Cashier";
+          deskTitle = "Cash Counter";
+          break;
+        case "loanOfficers":
+          staffCount = Math.max(1, s.loanOfficers || 1);
+          employeePrefix = "LNO";
+          roleTitle = "Loan & Credit Officer";
+          deskTitle = "Loan Desk";
+          break;
+        case "accountAndKyc":
+          staffCount = Math.max(1, s.accountAndKyc || 1);
+          employeePrefix = "KYC";
+          roleTitle = "KYC & Account Specialist";
+          deskTitle = "KYC Desk";
+          break;
+        case "customerService":
+          staffCount = Math.max(1, s.customerService || 1);
+          employeePrefix = "CSR";
+          roleTitle = "Customer Support Executive";
+          deskTitle = "Service Desk";
+          break;
+        case "managers":
+          staffCount = Math.max(1, s.managers || 1);
+          employeePrefix = "MGR";
+          roleTitle = "Branch Manager";
+          deskTitle = "Manager Chamber";
+          break;
+      }
     }
+
+    // Map query to specific employee created by admin using load-balanced round-robin
+    const employeeIndex = (countToday % Math.max(1, staffCount)) + 1;
+    const assignedEmployeeId = `${employeePrefix}-${employeeIndex
+      .toString()
+      .padStart(2, "0")}`;
+    const assignedEmployeeName = `${roleTitle} #${employeeIndex}`;
+    const assignedDesk = `${deskTitle} #${employeeIndex}`;
 
     const estimatedWaitMinutes = Math.max(
       meta.avgMinutes,
@@ -161,6 +209,9 @@ export async function POST(req: NextRequest) {
       serviceType: serviceType as BankingServiceType,
       assignedCategory: meta.category,
       categoryLabel: meta.label,
+      assignedEmployeeName,
+      assignedEmployeeId,
+      assignedDesk,
       status: "waiting",
       queuePosition: waitingAhead + 1,
       estimatedWaitMinutes,
@@ -170,7 +221,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: `Token ${tokenNumber} generated successfully!`,
+        message: `Token ${tokenNumber} mapped to ${assignedEmployeeName} (${assignedEmployeeId}) at ${assignedDesk}`,
         data: newToken,
       },
       { status: 201 }

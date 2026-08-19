@@ -20,6 +20,9 @@ export interface IServiceToken extends Document {
   serviceType: BankingServiceType;
   assignedCategory: CounterCategory;
   categoryLabel: string;
+  assignedEmployeeName: string;
+  assignedEmployeeId: string;
+  assignedDesk: string;
   status: "waiting" | "called" | "in_service" | "completed" | "cancelled";
   queuePosition: number;
   estimatedWaitMinutes: number;
@@ -95,6 +98,18 @@ const ServiceTokenSchema: Schema<IServiceToken> = new Schema(
     categoryLabel: {
       type: String,
       required: true,
+    },
+    assignedEmployeeName: {
+      type: String,
+      default: "Branch Officer #1",
+    },
+    assignedEmployeeId: {
+      type: String,
+      default: "EMP-01",
+    },
+    assignedDesk: {
+      type: String,
+      default: "Counter #1",
     },
     status: {
       type: String,

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { BankingServiceType } from "@/types/serviceTypes";
+import connectToDatabase from "@/lib/mongodb";
+import BankBranch from "@/models/BankBranch";
 
 interface AIAdviceResponse {
   requiresVisit: boolean;
   visitVerdict: string;
   summary: string;
+  mappedDepartment: string;
+  mappedEmployeeRole: string;
+  mappedDesk: string;
   digitalAlternatives: string[];
   requiredDocuments: Array<{
     name: string;
@@ -49,6 +53,9 @@ function getKnowledgeBaseAdvice(
         summary: isTelugu
           ? "₹50,000 లేదా అంతకంటే ఎక్కువ నగదు డిపాజిట్/విత్‌డ్రాయల్ కోసం పాన్ కార్డ్ పరిశీలన మరియు కౌంటర్ క్యాషియర్ ప్రమాణీకరణ అవసరం."
           : "Cash deposits or withdrawals exceeding ₹50,000 require PAN card verification and counter cashier authorization.",
+        mappedDepartment: isTelugu ? "నగదు నిర్వహణ విభాగం" : "Cash Operations Department",
+        mappedEmployeeRole: isTelugu ? "హెడ్ క్యాషియర్ / క్యాష్ ఆఫీసర్ (కౌంటర్ #1 & #2)" : "Head Cashier / Cash Officer (Counters #1 & #2)",
+        mappedDesk: isTelugu ? "నగదు కౌంటర్" : "Cash Teller Counter",
         digitalAlternatives: isTelugu
           ? [
               "₹50,000 లోపు నగదు డిపాజిట్ కోసం 24x7 క్యాష్ డిపాజిట్ మెషిన్ (CDM) ఉపయోగించవచ్చు.",
@@ -100,6 +107,9 @@ function getKnowledgeBaseAdvice(
         summary: isTelugu
           ? "సాధారణ నగదు విత్‌డ్రాయల్ మరియు ₹50,000 లోపు డిపాజిట్లను సమీపంలోని ATM లేదా క్యాష్ డిపాజిట్ మెషిన్ (CDM) ద్వారా నేరుగా చేయవచ్చు."
           : "Standard withdrawals and cash deposits under ₹50,000 can be executed 24/7 at nearest Bank ATM / Cash Deposit Machine.",
+        mappedDepartment: isTelugu ? "డిజిటల్ బ్యాంకింగ్ / ATM నెట్‌వర్క్" : "Digital Banking / ATM Network",
+        mappedEmployeeRole: isTelugu ? "సెల్ఫ్-సర్వీస్ ATM / క్యాషియర్ కౌంటర్" : "Self-Service ATM / Alternate Cashier Counter",
+        mappedDesk: isTelugu ? "24x7 ATM సెంటర్ / క్యాష్ కౌంటర్" : "24x7 ATM Recycler / Counter #1",
         digitalAlternatives: isTelugu
           ? [
               "డెబిట్ కార్డుతో ఏదైనా ATM నుండి నగదు విత్‌డ్రా చేసుకోండి.",
@@ -142,16 +152,19 @@ function getKnowledgeBaseAdvice(
       summary: isTelugu
         ? "మీ ఆధార్ మరియు పాన్ సమాచారంలో మార్పు లేకపోతే, మీరు మొబైల్ బ్యాంకింగ్ లేదా వీడియో KYC ద్వారా ఆన్‌లైన్‌లోనే Re-KYC పూర్తి చేయవచ్చు. సంతకం లేదా బయోమెట్రిక్ మార్పు ఉంటే మాత్రమే బ్రాంచ్‌కు రండి."
         : "Standard Re-KYC can be completed online via NetBanking or Video-KYC without visiting the branch. Physical visit is only needed if biometric mismatch or signature update is required.",
+      mappedDepartment: isTelugu ? "ఖాతా & KYC సమ్మతి విభాగం" : "Accounts & KYC Compliance Desk",
+      mappedEmployeeRole: isTelugu ? "KYC వెరిఫికేషన్ ఆఫీసర్ (KYC-01 / KYC-02)" : "KYC Verification Officer (KYC-01 / KYC-02)",
+      mappedDesk: isTelugu ? "KYC డెస్క్ #1" : "KYC & Account Desk #1",
       digitalAlternatives: isTelugu
         ? [
-              "నెట్ బ్యాంకింగ్ పోర్టల్‌లోకి లాగిన్ అయి 'Service Requests' -> 'Re-KYC Update' ఎంచుకోండి.",
-              "OTP ఆధారిత ఆధార్ ధృవీకరణ ద్వారా 2 నిమిషాల్లో అప్‌డేట్ చేయండి.",
-            ]
+            "నెట్ బ్యాంకింగ్ పోర్టల్‌లోకి లాగిన్ అయి 'Service Requests' -> 'Re-KYC Update' ఎంచుకోండి.",
+            "OTP ఆధారిత ఆధార్ ధృవీకరణ ద్వారా 2 నిమిషాల్లో అప్‌డేట్ చేయండి.",
+          ]
         : [
-              "Log in to Bank Internet Banking -> Service Requests -> Online Re-KYC Updation.",
-              "Use DigiLocker integration to auto-fetch verified Aadhaar & PAN.",
-              "Schedule a 3-minute Video-KYC call with an officer.",
-            ],
+            "Log in to Bank Internet Banking -> Service Requests -> Online Re-KYC Updation.",
+            "Use DigiLocker integration to auto-fetch verified Aadhaar & PAN.",
+            "Schedule a 3-minute Video-KYC call with an officer.",
+          ],
       requiredDocuments: [
         {
           name: isTelugu ? "అసలు ఆధార్ కార్డ్ (Aadhaar Card)" : "Original Aadhaar Card",
@@ -172,7 +185,7 @@ function getKnowledgeBaseAdvice(
       prerequisites: isTelugu
         ? [
             "ఆధార్‌తో లింక్ అయిన మొబైల్ నంబర్ OTP కోసం సిద్ధంగా ఉండాలి.",
-            "బ్రాంచ్‌కు వస్తే అసలు పత్రాలను ساتھ ఉంచుకోండి.",
+            "బ్రాంచ్‌కు వస్తే అసలు పత్రాలను साथ ఉంచుకోండి.",
           ]
         : [
             "Aadhaar-linked mobile phone must be active to receive UIDAI OTP.",
@@ -198,6 +211,9 @@ function getKnowledgeBaseAdvice(
       summary: isTelugu
         ? "మీ కొత్త చిరునామా ఇప్పటికే ఆధార్‌లో అప్‌డేట్ అయి ఉంటే, నెట్ బ్యాంకింగ్ ద్వారా ఆన్‌లైన్‌లోనే మార్చవచ్చు. వేరే పత్రాలు ఉంటే బ్రాంచ్ డెస్క్‌కు రండి."
         : "If your Aadhaar card already reflects your new address, you can update your bank address online in 2 minutes using Aadhaar OTP. Branch visit is only needed for non-Aadhaar proofs (Rent Agreement/Passport).",
+      mappedDepartment: isTelugu ? "కస్టమర్ సర్వీస్ & ప్రొఫైల్ విభాగం" : "Customer Service & Profile Maintenance",
+      mappedEmployeeRole: isTelugu ? "కస్టమర్ సర్వీస్ ఎగ్జిక్యూటివ్ (CSR-01)" : "Customer Service Representative (CSR-01 / CSR-02)",
+      mappedDesk: isTelugu ? "కస్టమర్ సర్వీస్ డెస్క్" : "Customer Service Desk #1",
       digitalAlternatives: isTelugu
         ? [
             "నెట్ బ్యాంకింగ్ -> Profile -> 'Update Communication Address' ఎంచుకోండి.",
@@ -254,6 +270,9 @@ function getKnowledgeBaseAdvice(
         : isLostOrBlock
         ? "Immediately block your card via Mobile App or 24x7 IVR to prevent fraud. A replacement chip card will be dispatched to your registered address."
         : "Green PIN generation, international transaction toggle, limit enhancements, and replacement card requests can be performed instantly via Mobile Banking.",
+      mappedDepartment: isTelugu ? "కార్డ్స్ & డిజిటల్ పేమెంట్స్ డెస్క్" : "Cards & Digital Payments Desk",
+      mappedEmployeeRole: isTelugu ? "కస్టమర్ సర్వీస్ ఆఫీసర్ (CSR-01)" : "Customer Service Officer (CSR-01 / CSR-02)",
+      mappedDesk: isTelugu ? "సర్వీస్ డెస్క్ #1" : "Service Desk #1",
       digitalAlternatives: isTelugu
         ? [
             "మొబైల్ బ్యాంకింగ్ యాప్ -> 'Cards' -> 'Instant Block / Replace' క్లిక్ చేయండి.",
@@ -296,6 +315,9 @@ function getKnowledgeBaseAdvice(
       summary: isTelugu
         ? "ప్రాథమిక అర్హతను ఆన్‌లైన్‌లో తనిఖీ చేయవచ్చు, కానీ ఆస్తి పత్రాలు, శాలరీ స్లిప్‌ల భౌతిక పరిశీలన మరియు రుణ ఒప్పంద సంతకాల కోసం లోన్ ఆఫీసర్‌ను కలవాలి."
         : "Initial eligibility pre-approval is available online, but physical verification of income/property deeds, sanction letter execution, and loan agreement signing requires meeting the Credit Officer.",
+      mappedDepartment: isTelugu ? "రుణాలు & క్రెడిట్ అప్రైజల్ విభాగం" : "Loans & Credit Appraisal Department",
+      mappedEmployeeRole: isTelugu ? "సీనియర్ లోన్ ఆఫీసర్ (LNO-01 / LNO-02)" : "Senior Loan Officer (LNO-01 / LNO-02)",
+      mappedDesk: isTelugu ? "రుణాల డెస్క్ #1" : "Credit & Loan Desk #1",
       digitalAlternatives: isTelugu
         ? [
             "బ్యాంక్ వెబ్‌సైట్‌లో 'Loan Eligibility Calculator' ద్వారా అర్హత తెలుసుకోండి.",
@@ -356,6 +378,9 @@ function getKnowledgeBaseAdvice(
       summary: isTelugu
         ? "ఇతర బ్యాంక్ చెక్కుల క్లియరింగ్ లేదా డిమాండ్ డ్రాఫ్ట్ (DD) పొందడానికి బ్రాంచ్ క్లియరింగ్ కౌంటర్‌ను సందర్శించాలి. కొత్త చెక్ బుక్ కోసం ఆన్‌లైన్‌లో ఆర్డర్ చేయవచ్చు."
         : "Physical submission of third-party clearing cheques, cheque stop-payment, and Demand Draft (DD) issuance requires branch counter visit. However, new cheque books can be ordered online.",
+      mappedDepartment: isTelugu ? "క్లియరింగ్ & డ్రాఫ్ట్ సర్వీసెస్" : "Clearing & Remittance Department",
+      mappedEmployeeRole: isTelugu ? "క్లియరింగ్ క్యాషియర్ (CSH-01 / CSH-02)" : "Clearing Officer / Cashier (CSH-01 / CSH-02)",
+      mappedDesk: isTelugu ? "క్లియరింగ్ కౌంటర్" : "Clearing & Cash Counter",
       digitalAlternatives: isTelugu
         ? [
             "కొత్త చెక్ బుక్ రిక్వెస్ట్ కోసం నెట్ బ్యాంకింగ్ ఉపయోగించండి.",
@@ -408,6 +433,9 @@ function getKnowledgeBaseAdvice(
         summary: isTelugu
           ? "ఖాతా మూసివేతకు మిగిలిన బ్యాలెన్స్ సెటిల్‌మెంట్, చెక్ బుక్/డెబిట్ కార్డ్ సరెండర్ మరియు బ్రాంచ్ మేనేజర్ ఆమోదం అవసరం."
           : "Account closure requires surrender of unutilized cheque leaves, active debit cards, zero-balance settlement, and manager authorization.",
+        mappedDepartment: isTelugu ? "బ్రాంచ్ మేనేజ్‌మెంట్ & ఆడిట్ విభాగం" : "Branch Management & Audit Chamber",
+        mappedEmployeeRole: isTelugu ? "బ్రాంచ్ మేనేజర్ (MGR-01)" : "Branch Manager / Operations Head (MGR-01)",
+        mappedDesk: isTelugu ? "మేనేజర్ ఛాంబర్" : "Manager Chamber #1",
         digitalAlternatives: isTelugu
           ? ["ఖాతా బ్యాలెన్స్‌ను ముందుగానే UPI ద్వారా వేరే ఖాతాకు బదిలీ చేయవచ్చు."]
           : ["Transfer out remaining funds via NetBanking to expedite closing settlement."],
@@ -444,6 +472,9 @@ function getKnowledgeBaseAdvice(
         summary: isTelugu
           ? "మీరు బ్రాంచ్‌కు వెళ్లకుండానే మొబైల్ లేదా వెబ్‌సైట్ ద్వారా ఆధార్ OTP & వీడియో KYC తో కొత్త జీరో-బ్యాలెన్స్ లేదా సేవింగ్స్ ఖాతాను తెరవవచ్చు."
           : "You can open an instant Zero-Balance or Premium Savings Account completely online in 5 minutes via Aadhaar e-KYC and a quick 2-minute Video Call.",
+        mappedDepartment: isTelugu ? "ఖాతాల ప్రారంభం & ఆన్‌బోర్డింగ్ డెస్క్" : "New Accounts & Onboarding Desk",
+        mappedEmployeeRole: isTelugu ? "ఖాతా ప్రారంభ అధికారి (KYC-01 / KYC-02)" : "Account Opening Officer (KYC-01 / KYC-02)",
+        mappedDesk: isTelugu ? "ఖాతా డెస్క్ #1" : "Account Desk #1",
         digitalAlternatives: isTelugu
           ? [
               "వెబ్‌సైట్‌లో 'Open Instant Savings Account' క్లిక్ చేయండి.",
@@ -494,6 +525,9 @@ function getKnowledgeBaseAdvice(
     summary: isTelugu
       ? "మీ ప్రశ్నకు ప్రత్యేక పరిష్కారం కోసం సంబంధిత సేవా డెస్క్‌ను సంప్రదించడం మంచిది."
       : "For your specific banking inquiry, our branch customer service desk will provide dedicated assistance.",
+    mappedDepartment: isTelugu ? "కస్టమర్ సర్వీస్ విభాగం" : "Customer Service Department",
+    mappedEmployeeRole: isTelugu ? "కస్టమర్ రిలేషన్స్ ఆఫీసర్ (CSR-01)" : "Customer Relations Officer (CSR-01)",
+    mappedDesk: isTelugu ? "సర్వీస్ డెస్క్ #1" : "Service Desk #1",
     digitalAlternatives: isTelugu
       ? ["మొబైల్ బ్యాంకింగ్ మరియు 24x7 హెల్ప్‌లైన్‌ను ఉపయోగించవచ్చు."]
       : ["Explore the NetBanking Self-Service portal or call 24x7 Phone Banking."],
@@ -539,14 +573,18 @@ Selected Response Language: ${lang === "te" ? "Telugu (తెలుగు)" : "E
 
 Your task:
 1. Objectively evaluate if the customer REALLY REQUIRES a physical in-person branch visit, or if it can be 100% resolved digitally (via NetBanking, Mobile App, ATM/CDM, DigiLocker, Video-KYC).
-2. If branch visit is required, specify EVERY mandatory and optional document, certificate, and prerequisite required to resolve the query in one single visit without getting sent back.
-3. If branch visit is NOT required, provide the exact step-by-step digital alternative.
-4. Output MUST be ONLY valid JSON matching this exact TypeScript structure:
+2. Map this query to the specific bank department, counter desk, and officer role (e.g. Loan Officer Desk, Cashier Counter, KYC Specialist, Branch Manager).
+3. If branch visit is required, specify EVERY mandatory and optional document, certificate, and prerequisite required to resolve the query in one single visit without getting sent back.
+4. If branch visit is NOT required, provide the exact step-by-step digital alternative.
+5. Output MUST be ONLY valid JSON matching this exact TypeScript structure:
 
 {
   "requiresVisit": boolean,
   "visitVerdict": "Brief punchy verdict headline in ${lang === "te" ? "Telugu" : "English"}",
   "summary": "Clear, direct 2-sentence explanation of why visit is/isn't needed in ${lang === "te" ? "Telugu" : "English"}",
+  "mappedDepartment": "Department name in ${lang === "te" ? "Telugu" : "English"}",
+  "mappedEmployeeRole": "Specific Officer Role (e.g. Senior Loan Officer / Cashier Counter) in ${lang === "te" ? "Telugu" : "English"}",
+  "mappedDesk": "Desk/Counter name in ${lang === "te" ? "Telugu" : "English"}",
   "digitalAlternatives": ["Array of concise bullet points describing online/ATM alternatives in ${lang === "te" ? "Telugu" : "English"}"],
   "requiredDocuments": [
     {
@@ -578,7 +616,6 @@ Respond ONLY with the raw JSON object. Do not include markdown code block backti
         return NextResponse.json({ success: true, data: parsed });
       } catch (geminiError) {
         console.warn("Gemini API call error, falling back to Knowledge Base:", geminiError);
-        // Fall through to KnowledgeBase engine
       }
     }
 
