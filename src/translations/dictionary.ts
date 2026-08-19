@@ -59,6 +59,11 @@ export const translations: Record<Language, Record<string, string>> = {
     stop_voice_advice: "⏹️ Stop Audio",
     playing_audio: "Playing AI voice advice...",
     speech_to_speech_badge: "Sarvam & Gemini Speech-to-Speech",
+    assigned_time_slot: "Assigned Visit Time Slot",
+    appointment_window: "Mandatory Appointment Window",
+    branch_operating_hours: "Branch Operating Hours: 9:00 AM - 5:00 PM",
+    mandatory_visit_badge: "Mandatory In-Branch Visit",
+    operating_hours_tag: "Working Hours: 9:00 AM - 5:00 PM",
 
     // Dashboard & Profile
     welcome_back: "Welcome back",
@@ -282,6 +287,11 @@ export const translations: Record<Language, Record<string, string>> = {
     stop_voice_advice: "⏹️ ఆడియో ఆపండి",
     playing_audio: "AI వాయిస్ సలహా వినబడుతోంది...",
     speech_to_speech_badge: "స్పీచ్-టు-స్పీచ్ అసిస్టెంట్",
+    assigned_time_slot: "కేటాయించిన సమయం (టైమ్ స్లాట్)",
+    appointment_window: "తప్పనిసరి అపాయింట్‌మెంట్ సమయం",
+    branch_operating_hours: "బ్రాంచ్ పని వేళలు: ఉదయం 9:00 నుండి సాయంత్రం 5:00 వరకు",
+    mandatory_visit_badge: "భౌతిక బ్రాంచ్ సందర్శన తప్పనిసరి",
+    operating_hours_tag: "పని వేళలు: ఉదయం 9:00 - సాయంత్రం 5:00",
 
     // Dashboard & Profile
     welcome_back: "తిరిగి స్వాగతం",

@@ -225,6 +225,59 @@ export async function POST(req: NextRequest) {
       Math.ceil(((waitingAhead + 1) * meta.avgMinutes) / staffCount)
     );
 
+    // Calculate Mandatory Bank Visit Appointment Time Slot within 09:00 AM to 05:00 PM
+    const now = new Date();
+    const BANK_START_HOUR = 9;  // 09:00 AM
+    const BANK_END_HOUR = 17;   // 05:00 PM (17:00)
+
+    let targetDate = new Date(now);
+    let startMinutesFromMidnight = now.getHours() * 60 + now.getMinutes();
+
+    if (startMinutesFromMidnight < BANK_START_HOUR * 60) {
+      startMinutesFromMidnight = BANK_START_HOUR * 60;
+    } else if (startMinutesFromMidnight >= BANK_END_HOUR * 60 - 15) {
+      targetDate.setDate(targetDate.getDate() + 1);
+      startMinutesFromMidnight = BANK_START_HOUR * 60;
+    } else {
+      startMinutesFromMidnight += Math.max(5, estimatedWaitMinutes);
+      startMinutesFromMidnight = Math.ceil(startMinutesFromMidnight / 5) * 5;
+      const slotDuration = Math.max(20, meta.avgMinutes || 20);
+      if (startMinutesFromMidnight + slotDuration > BANK_END_HOUR * 60) {
+        targetDate.setDate(targetDate.getDate() + 1);
+        startMinutesFromMidnight = BANK_START_HOUR * 60;
+      }
+    }
+
+    const slotDuration = Math.max(20, meta.avgMinutes || 20);
+    const endMinutesFromMidnight = Math.min(
+      BANK_END_HOUR * 60,
+      startMinutesFromMidnight + slotDuration
+    );
+
+    const formatSlotTime = (minutes: number): string => {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      const period = h >= 12 ? "PM" : "AM";
+      const displayH = h % 12 === 0 ? 12 : h % 12;
+      const displayM = m.toString().padStart(2, "0");
+      return `${displayH}:${displayM} ${period}`;
+    };
+
+    const timeSlotFrom = formatSlotTime(startMinutesFromMidnight);
+    const timeSlotTo = formatSlotTime(endMinutesFromMidnight);
+    const timeSlot = `${timeSlotFrom} - ${timeSlotTo}`;
+
+    const isToday = targetDate.toDateString() === now.toDateString();
+    const dateFormatted = targetDate.toLocaleDateString("en-IN", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const slotDate = isToday ? `Today (${dateFormatted})` : `Next Day (${dateFormatted})`;
+
+    const isMandatoryVisit = body.isMandatoryVisit !== undefined ? !!body.isMandatoryVisit : true;
+
     const newToken = await ServiceToken.create({
       tokenNumber,
       userId: user._id,
@@ -243,13 +296,19 @@ export async function POST(req: NextRequest) {
       status: "waiting",
       queuePosition: waitingAhead + 1,
       estimatedWaitMinutes,
+      isMandatoryVisit,
+      timeSlotFrom,
+      timeSlotTo,
+      timeSlot,
+      slotDate,
+      operatingHours: "09:00 AM - 05:00 PM",
       notes: notes?.trim() || "",
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: `Token ${tokenNumber} mapped to ${assignedEmployeeName} (${assignedEmployeeId}) at ${assignedDesk}`,
+        message: `Token ${tokenNumber} mapped to ${assignedEmployeeName} (${assignedEmployeeId}) at ${assignedDesk}. Assigned Time Slot: ${timeSlot} (${slotDate}).`,
         data: newToken,
       },
       { status: 201 }

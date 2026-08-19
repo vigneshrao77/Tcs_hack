@@ -24,6 +24,7 @@ import {
   SparklesIcon,
   MicrophoneIcon,
   SpeakerIcon,
+  ClockIcon,
   UserIcon,
 } from "@/components/BankIcons";
 
@@ -51,6 +52,12 @@ interface ServiceTokenData {
   status: "waiting" | "called" | "in_service" | "completed" | "cancelled";
   queuePosition: number;
   estimatedWaitMinutes: number;
+  isMandatoryVisit?: boolean;
+  timeSlotFrom?: string;
+  timeSlotTo?: string;
+  timeSlot?: string;
+  slotDate?: string;
+  operatingHours?: string;
   createdAt: string;
 }
 
@@ -551,6 +558,8 @@ export default function DashboardPage() {
     setAlertNotice(null);
 
     try {
+      const isMandatory = aiAdvice ? aiAdvice.requiresVisit : true;
+
       const res = await fetch("/api/tokens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -558,6 +567,7 @@ export default function DashboardPage() {
           accountNumber: user.accountNumber,
           serviceType: selectedService,
           notes: detailedExplanation.trim(),
+          isMandatoryVisit: isMandatory,
         }),
       });
 
@@ -570,7 +580,7 @@ export default function DashboardPage() {
         stopSpeechAudio();
         setAlertNotice({
           type: "success",
-          text: `Queue Ticket ${data.data.tokenNumber} issued & mapped to ${data.data.assignedEmployeeName || "Officer"} at ${data.data.assignedDesk || "Counter"}.`,
+          text: `Queue Ticket ${data.data.tokenNumber} issued! Assigned Time Slot: ${data.data.timeSlot || "09:00 AM - 09:30 AM"} (${data.data.slotDate || "Today"}) at ${data.data.assignedDesk || "Counter"}.`,
         });
       } else {
         setAlertNotice({
@@ -770,6 +780,39 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Mandatory In-Branch Visit Time Slot Banner (09:00 AM - 05:00 PM) */}
+            <div className="bg-gray-50 border border-gray-300 rounded-md p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded bg-gray-900 text-white flex items-center justify-center shrink-0">
+                  <ClockIcon size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 font-semibold">
+                      {t("assigned_time_slot")}
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-500 font-medium">
+                      {activeToken.slotDate || "Today"}
+                    </span>
+                  </div>
+                  <div className="text-base font-bold font-mono text-gray-900 mt-0.5 tracking-tight">
+                    {activeToken.timeSlot || `${activeToken.timeSlotFrom || "09:00 AM"} - ${activeToken.timeSlotTo || "09:30 AM"}`}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:items-end text-xs">
+                <span className="font-semibold text-gray-900 font-mono">
+                  {activeToken.operatingHours || "09:00 AM - 05:00 PM"}
+                </span>
+                <span className="text-[11px] text-gray-500">
+                  {activeToken.isMandatoryVisit !== false
+                    ? t("mandatory_visit_badge")
+                    : "Digital Option Available"}
+                </span>
+              </div>
+            </div>
+
             {/* Assigned Staff & Desk */}
             <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
@@ -849,11 +892,16 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {activeToken && (
-              <span className="text-xs text-gray-500 font-mono">
-                Active Ticket: <strong className="text-gray-900">{activeToken.tokenNumber}</strong>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono text-gray-500 px-2 py-0.5 bg-gray-100 rounded border border-gray-200">
+                {t("operating_hours_tag")}
               </span>
-            )}
+              {activeToken && (
+                <span className="text-xs text-gray-500 font-mono">
+                  Active Ticket: <strong className="text-gray-900">{activeToken.tokenNumber}</strong>
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Grid */}
@@ -945,6 +993,18 @@ export default function DashboardPage() {
                 >
                   {t("change_selection")}
                 </button>
+              </div>
+
+              {/* Operating Hours Notice Preview */}
+              <div className="p-2.5 rounded bg-blue-50 border border-blue-200 text-blue-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
+                <div className="flex items-center gap-1.5">
+                  <ClockIcon size={13} className="text-blue-700" />
+                  <span className="font-semibold">{t("appointment_window")}:</span>
+                  <span>Assigned between 09:00 AM – 05:00 PM</span>
+                </div>
+                <span className="text-[10px] text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-200">
+                  {t("branch_operating_hours")}
+                </span>
               </div>
 
               {/* Detailed Explanation Text / Sarvam Voice */}

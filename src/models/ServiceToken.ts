@@ -26,6 +26,12 @@ export interface IServiceToken extends Document {
   status: "waiting" | "called" | "in_service" | "completed" | "cancelled";
   queuePosition: number;
   estimatedWaitMinutes: number;
+  isMandatoryVisit?: boolean;
+  timeSlotFrom?: string;
+  timeSlotTo?: string;
+  timeSlot?: string;
+  slotDate?: string;
+  operatingHours?: string;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -125,6 +131,26 @@ const ServiceTokenSchema: Schema<IServiceToken> = new Schema(
       type: Number,
       default: 5,
     },
+    isMandatoryVisit: {
+      type: Boolean,
+      default: true,
+    },
+    timeSlotFrom: {
+      type: String,
+    },
+    timeSlotTo: {
+      type: String,
+    },
+    timeSlot: {
+      type: String,
+    },
+    slotDate: {
+      type: String,
+    },
+    operatingHours: {
+      type: String,
+      default: "09:00 AM - 05:00 PM",
+    },
     notes: {
       type: String,
       trim: true,
@@ -140,6 +166,10 @@ ServiceTokenSchema.index({ bankCode: 1, assignedCategory: 1, createdAt: -1 });
 ServiceTokenSchema.index({ bankCode: 1, status: 1 });
 ServiceTokenSchema.index({ accountNumber: 1, status: 1, createdAt: -1 });
 ServiceTokenSchema.index({ createdAt: -1 });
+
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).ServiceToken;
+}
 
 const ServiceToken: Model<IServiceToken> =
   mongoose.models.ServiceToken ||
