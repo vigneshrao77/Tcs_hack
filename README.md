@@ -6,7 +6,7 @@ A modern fullstack application boilerplate built with **Next.js 15+ (App Router)
 
 ## 🚀 Features
 
-- **Next.js 15+ App Router**: Modern server and client components, layouts, and React 19 support.
+- **Next.js 15+ App Router**: Modern server and client components, layouts,  React 19 support.
 - **Node.js Backend**: Built-in API route handlers (`/src/app/api/*`) for backend logic.
 - **MongoDB & Mongoose**: Cached database singleton connection helper to handle hot-reloading smoothly without exhausting connections.
 - **Sample Mongoose Model**: Pre-configured `Item` model at [`src/models/Item.ts`](file:///c:/Users/pegga/OneDrive/Desktop/Tcs/src/models/Item.ts).
